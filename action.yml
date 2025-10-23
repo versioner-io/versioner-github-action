@@ -1,0 +1,42 @@
+name: 'Versioner Deployment Tracker'
+description: 'Report deployment events to Versioner for tracking and visibility across environments'
+author: 'Phil Austin'
+
+branding:
+  icon: 'package'
+  color: 'blue'
+
+inputs:
+  api_url:
+    description: 'Versioner API endpoint URL (e.g., https://api.versioner.dev)'
+    required: true
+  api_key:
+    description: 'Versioner API key (store in GitHub Secrets)'
+    required: true
+  product_name:
+    description: 'Name of the product/service being deployed'
+    required: true
+  version:
+    description: 'Version identifier (e.g., git SHA, semantic version, build number)'
+    required: true
+  environment:
+    description: 'Target environment (e.g., production, staging, dev)'
+    required: true
+  status:
+    description: 'Deployment status (success, failure, in_progress)'
+    required: false
+    default: 'success'
+  metadata:
+    description: 'Additional JSON metadata to attach to the deployment event'
+    required: false
+    default: '{}'
+
+outputs:
+  deployment_id:
+    description: 'UUID of the created deployment record'
+  event_id:
+    description: 'UUID of the deployment event'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'

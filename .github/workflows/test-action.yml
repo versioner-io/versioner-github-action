@@ -1,0 +1,33 @@
+name: Test Action
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Test environment'
+        required: false
+        default: 'test'
+
+jobs:
+  test-action:
+    name: Test Versioner Action
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Test action
+        uses: ./
+        with:
+          api_url: ${{ secrets.VERSIONER_API_URL }}
+          api_key: ${{ secrets.VERSIONER_API_KEY }}
+          product_name: versioner-github-action
+          version: ${{ github.sha }}
+          environment: ${{ github.event.inputs.environment || 'test' }}
+          status: success
+          metadata: |
+            {
+              "test_run": true,
+              "workflow": "test-action"
+            }
