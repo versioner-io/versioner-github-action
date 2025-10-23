@@ -34,8 +34,6 @@ describe('getGitHubMetadata', () => {
   it('should construct correct build URL', () => {
     const metadata = getGitHubMetadata()
 
-    expect(metadata.build_url).toBe(
-      'https://github.com/test-owner/test-repo/actions/runs/12345'
-    )
+    expect(metadata.build_url).toBe('https://github.com/test-owner/test-repo/actions/runs/12345')
   })
 })
