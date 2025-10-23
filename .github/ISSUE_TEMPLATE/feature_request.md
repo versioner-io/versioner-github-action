@@ -23,7 +23,7 @@ Describe how you envision this feature working.
 
 **Example workflow configuration:**
 ```yaml
-- uses: versioner-app/versioner-github-action@v1
+- uses: versioner-io/versioner-github-action@v1
   with:
     # Show how the new feature would be used
     new_feature: value

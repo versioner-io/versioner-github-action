@@ -39,7 +39,7 @@ jobs:
 
       # Track the deployment
       - name: Track deployment in Versioner
-        uses: versioner-app/versioner-github-action@v1
+        uses: versioner-io/versioner-github-action@v1
         with:
           api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
@@ -82,5 +82,5 @@ The action automatically captures:
 
 - 📖 [Full Documentation](./README.md)
 - 💡 [Usage Examples](./EXAMPLES.md)
-- 🐛 [Report Issues](https://github.com/versioner-app/versioner-github-action/issues)
+- 🐛 [Report Issues](https://github.com/versioner-io/versioner-github-action/issues)
 - 📧 [Email Support](mailto:support@versioner.dev)

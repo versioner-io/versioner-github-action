@@ -34,7 +34,7 @@ jobs:
         run: ./deploy.sh production
 
       - name: Track deployment
-        uses: versioner-app/versioner-github-action@v1
+        uses: versioner-io/versioner-github-action@v1
         with:
           api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
@@ -60,7 +60,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: ./deploy.sh dev
-      - uses: versioner-app/versioner-github-action@v1
+      - uses: versioner-io/versioner-github-action@v1
         with:
           api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
@@ -74,7 +74,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: ./deploy.sh staging
-      - uses: versioner-app/versioner-github-action@v1
+      - uses: versioner-io/versioner-github-action@v1
         with:
           api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
@@ -89,7 +89,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: ./deploy.sh production
-      - uses: versioner-app/versioner-github-action@v1
+      - uses: versioner-io/versioner-github-action@v1
         with:
           api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
@@ -126,7 +126,7 @@ jobs:
           ./deploy.sh production
 
       - name: Track deployment
-        uses: versioner-app/versioner-github-action@v1
+        uses: versioner-io/versioner-github-action@v1
         with:
           api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
@@ -163,7 +163,7 @@ jobs:
         run: npm publish
 
       - name: Track deployment
-        uses: versioner-app/versioner-github-action@v1
+        uses: versioner-io/versioner-github-action@v1
         with:
           api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
@@ -208,7 +208,7 @@ jobs:
           echo "SECONDS=$DURATION" >> $GITHUB_OUTPUT
 
       - name: Track deployment
-        uses: versioner-app/versioner-github-action@v1
+        uses: versioner-io/versioner-github-action@v1
         with:
           api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
@@ -229,7 +229,7 @@ jobs:
 
 ```yaml
 - name: Track deployment with infrastructure metadata
-  uses: versioner-app/versioner-github-action@v1
+  uses: versioner-io/versioner-github-action@v1
   with:
     api_url: ${{ secrets.VERSIONER_API_URL }}
     api_key: ${{ secrets.VERSIONER_API_KEY }}
@@ -270,7 +270,7 @@ jobs:
         continue-on-error: true
 
       - name: Track deployment status
-        uses: versioner-app/versioner-github-action@v1
+        uses: versioner-io/versioner-github-action@v1
         with:
           api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
@@ -305,7 +305,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Start deployment tracking
-        uses: versioner-app/versioner-github-action@v1
+        uses: versioner-io/versioner-github-action@v1
         with:
           api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
@@ -319,7 +319,7 @@ jobs:
 
       - name: Update deployment status
         if: always()
-        uses: versioner-app/versioner-github-action@v1
+        uses: versioner-io/versioner-github-action@v1
         with:
           api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
@@ -358,7 +358,7 @@ jobs:
           fi
 
       - name: Track deployment
-        uses: versioner-app/versioner-github-action@v1
+        uses: versioner-io/versioner-github-action@v1
         with:
           api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
@@ -385,7 +385,7 @@ jobs:
       - run: ./deploy.sh production
 
       - name: Track deployment
-        uses: versioner-app/versioner-github-action@v1
+        uses: versioner-io/versioner-github-action@v1
         with:
           api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
@@ -418,7 +418,7 @@ jobs:
         run: ./deploy.sh production ${{ matrix.region }}
 
       - name: Track deployment
-        uses: versioner-app/versioner-github-action@v1
+        uses: versioner-io/versioner-github-action@v1
         with:
           api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
@@ -454,7 +454,7 @@ jobs:
         run: ./deploy-${{ matrix.service }}.sh production
 
       - name: Track deployment
-        uses: versioner-app/versioner-github-action@v1
+        uses: versioner-io/versioner-github-action@v1
         with:
           api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
@@ -483,7 +483,7 @@ jobs:
 
       - name: Track deployment
         id: versioner
-        uses: versioner-app/versioner-github-action@v1
+        uses: versioner-io/versioner-github-action@v1
         with:
           api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
@@ -542,7 +542,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: ./deploy-api.sh production
-      - uses: versioner-app/versioner-github-action@v1
+      - uses: versioner-io/versioner-github-action@v1
         with:
           api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
@@ -557,7 +557,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: ./deploy-web.sh production
-      - uses: versioner-app/versioner-github-action@v1
+      - uses: versioner-io/versioner-github-action@v1
         with:
           api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}

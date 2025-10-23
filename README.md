@@ -1,6 +1,6 @@
 # Versioner GitHub Action
 
-A GitHub Action for reporting deployment events to [Versioner](https://github.com/versioner-app/versioner), a deployment tracking and visibility system.
+A GitHub Action for reporting deployment events to [Versioner](https://github.com/versioner-io/versioner), a deployment tracking and visibility system.
 
 ## 📌 What is Versioner?
 
@@ -40,7 +40,7 @@ jobs:
           ./deploy.sh production
 
       - name: Report deployment to Versioner
-        uses: versioner-app/versioner-github-action@v1
+        uses: versioner-io/versioner-github-action@v1
         with:
           api_url: https://api.versioner.dev
           api_key: ${{ secrets.VERSIONER_API_KEY }}
@@ -75,7 +75,7 @@ jobs:
 
 ```yaml
 - name: Report deployment
-  uses: versioner-app/versioner-github-action@v1
+  uses: versioner-io/versioner-github-action@v1
   with:
     api_url: ${{ secrets.VERSIONER_API_URL }}
     api_key: ${{ secrets.VERSIONER_API_KEY }}
@@ -92,7 +92,7 @@ jobs:
   run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
 - name: Report deployment
-  uses: versioner-app/versioner-github-action@v1
+  uses: versioner-io/versioner-github-action@v1
   with:
     api_url: ${{ secrets.VERSIONER_API_URL }}
     api_key: ${{ secrets.VERSIONER_API_KEY }}
@@ -105,7 +105,7 @@ jobs:
 
 ```yaml
 - name: Report deployment with metadata
-  uses: versioner-app/versioner-github-action@v1
+  uses: versioner-io/versioner-github-action@v1
   with:
     api_url: ${{ secrets.VERSIONER_API_URL }}
     api_key: ${{ secrets.VERSIONER_API_KEY }}
@@ -129,7 +129,7 @@ jobs:
   continue-on-error: true
 
 - name: Report deployment status
-  uses: versioner-app/versioner-github-action@v1
+  uses: versioner-io/versioner-github-action@v1
   with:
     api_url: ${{ secrets.VERSIONER_API_URL }}
     api_key: ${{ secrets.VERSIONER_API_KEY }}
@@ -148,7 +148,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: ./deploy.sh staging
-      - uses: versioner-app/versioner-github-action@v1
+      - uses: versioner-io/versioner-github-action@v1
         with:
           api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
@@ -162,7 +162,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: ./deploy.sh production
-      - uses: versioner-app/versioner-github-action@v1
+      - uses: versioner-io/versioner-github-action@v1
         with:
           api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
@@ -224,8 +224,8 @@ Each deployment event creates records in Versioner for:
 
 This GitHub Action is part of the Versioner ecosystem:
 
-- **[Versioner API](https://github.com/versioner-app/versioner-api)** - Core REST API for deployment tracking
-- **[Versioner GitHub Action](https://github.com/versioner-app/versioner-github-action)** - This action (for GitHub workflows)
+- **[Versioner API](https://github.com/versioner-io/versioner-api)** - Core REST API for deployment tracking
+- **[Versioner GitHub Action](https://github.com/versioner-io/versioner-github-action)** - This action (for GitHub workflows)
 - **Versioner Python SDK** - Coming soon (for non-GitHub CI/CD systems)
 - **Versioner Slack App** - Coming soon (chat-native deployment queries)
 
@@ -245,7 +245,7 @@ MIT License - see [LICENSE](./LICENSE) for details.
 ## 🆘 Support
 
 - **Documentation:** [docs.versioner.dev](https://docs.versioner.dev)
-- **Issues:** [GitHub Issues](https://github.com/versioner-app/versioner-github-action/issues)
+- **Issues:** [GitHub Issues](https://github.com/versioner-io/versioner-github-action/issues)
 - **Email:** support@versioner.dev
 
 ## 🙏 Contributing

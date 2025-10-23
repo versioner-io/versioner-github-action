@@ -30,7 +30,7 @@ What actually happened.
 
 ```yaml
 # Paste your workflow YAML here (remove sensitive data like API keys)
-- uses: versioner-app/versioner-github-action@v1
+- uses: versioner-io/versioner-github-action@v1
   with:
     api_url: https://api.versioner.dev
     # ... other inputs

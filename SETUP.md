@@ -207,6 +207,6 @@ npx tsc --noEmit
 
 ## Support
 
-- **Issues:** [GitHub Issues](https://github.com/versioner-app/versioner-github-action/issues)
+- **Issues:** [GitHub Issues](https://github.com/versioner-io/versioner-github-action/issues)
 - **Documentation:** [docs.versioner.dev](https://docs.versioner.dev)
 - **Email:** support@versioner.dev
