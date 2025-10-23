@@ -33,8 +33,10 @@ describe('getInputs', () => {
       productName: 'test-product',
       version: '1.0.0',
       environment: 'production',
+      eventType: 'deployment',
       status: 'success',
       metadata: {},
+      failOnRejection: false,
     })
   })
 

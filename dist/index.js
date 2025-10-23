@@ -34569,12 +34569,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.sendDeploymentEvent = sendDeploymentEvent;
+exports.sendVersionEvent = sendVersionEvent;
 const axios_1 = __importDefault(__nccwpck_require__(7269));
 const core = __importStar(__nccwpck_require__(7484));
 /**
  * Send deployment event to Versioner API
  */
-async function sendDeploymentEvent(apiUrl, apiKey, payload) {
+async function sendDeploymentEvent(apiUrl, apiKey, payload, failOnRejection = false) {
     const endpoint = `${apiUrl.replace(/\/$/, '')}/deployment-events/`;
     core.info(`Sending deployment event to ${endpoint}`);
     core.debug(`Payload: ${JSON.stringify(payload, null, 2)}`);
@@ -34595,6 +34596,29 @@ async function sendDeploymentEvent(apiUrl, apiKey, payload) {
             const axiosError = error;
             const status = axiosError.response?.status;
             const data = axiosError.response?.data;
+            // Handle rejection status codes (409, 423, 428)
+            if (status === 409 || status === 423 || status === 428) {
+                const errorData = data;
+                const message = errorData?.message || errorData?.error || 'Deployment rejected by Versioner';
+                const rejectionError = `Deployment rejected: ${message}`;
+                if (failOnRejection) {
+                    throw new Error(rejectionError);
+                }
+                else {
+                    core.warning(`⚠️ ${rejectionError}`);
+                    core.info('Continuing workflow (fail_on_rejection is false)');
+                    // Return a placeholder response when not failing
+                    return {
+                        deployment_id: '',
+                        event_id: '',
+                        product_id: '',
+                        version_id: '',
+                        environment_id: '',
+                        status: 'rejected',
+                        created_at: new Date().toISOString(),
+                    };
+                }
+            }
             // Provide detailed error messages
             if (status === 401) {
                 throw new Error(`Authentication failed: Invalid API key. Please check your VERSIONER_API_KEY secret.`);
@@ -34619,6 +34643,80 @@ async function sendDeploymentEvent(apiUrl, apiKey, payload) {
                 const message = axiosError.message || 'Unknown error';
                 const responseData = data ? `\nResponse: ${JSON.stringify(data)}` : '';
                 throw new Error(`Failed to send deployment event (HTTP ${status || 'unknown'}): ${message}${responseData}`);
+            }
+        }
+        // Non-axios errors
+        throw new Error(`Unexpected error: ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
+/**
+ * Send version event (build) to Versioner API
+ */
+async function sendVersionEvent(apiUrl, apiKey, payload, failOnRejection = false) {
+    const endpoint = `${apiUrl.replace(/\/$/, '')}/version-events/`;
+    core.info(`Sending version event to ${endpoint}`);
+    core.debug(`Payload: ${JSON.stringify(payload, null, 2)}`);
+    try {
+        const response = await axios_1.default.post(endpoint, payload, {
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${apiKey}`,
+            },
+            timeout: 30000, // 30 second timeout
+        });
+        core.info(`✅ Version event created successfully`);
+        core.debug(`Response: ${JSON.stringify(response.data, null, 2)}`);
+        return response.data;
+    }
+    catch (error) {
+        if (axios_1.default.isAxiosError(error)) {
+            const axiosError = error;
+            const status = axiosError.response?.status;
+            const data = axiosError.response?.data;
+            // Handle rejection status codes (409, 423, 428)
+            if (status === 409 || status === 423 || status === 428) {
+                const errorData = data;
+                const message = errorData?.message || errorData?.error || 'Build rejected by Versioner';
+                const rejectionError = `Build rejected: ${message}`;
+                if (failOnRejection) {
+                    throw new Error(rejectionError);
+                }
+                else {
+                    core.warning(`⚠️ ${rejectionError}`);
+                    core.info('Continuing workflow (fail_on_rejection is false)');
+                    // Return a placeholder response when not failing
+                    return {
+                        version_id: '',
+                        product_id: '',
+                        version: payload.version,
+                        created_at: new Date().toISOString(),
+                    };
+                }
+            }
+            // Provide detailed error messages
+            if (status === 401) {
+                throw new Error(`Authentication failed: Invalid API key. Please check your VERSIONER_API_KEY secret.`);
+            }
+            else if (status === 403) {
+                throw new Error(`Authorization failed: API key does not have permission to create version events.`);
+            }
+            else if (status === 422) {
+                const detail = data && typeof data === 'object' ? JSON.stringify(data) : String(data);
+                throw new Error(`Validation error: ${detail}`);
+            }
+            else if (status === 404) {
+                throw new Error(`API endpoint not found. Please check your api_url: ${apiUrl}`);
+            }
+            else if (axiosError.code === 'ECONNREFUSED') {
+                throw new Error(`Connection refused: Unable to connect to ${apiUrl}. Please check the API URL.`);
+            }
+            else if (axiosError.code === 'ETIMEDOUT') {
+                throw new Error(`Request timeout: The API did not respond within 30 seconds. Please try again.`);
+            }
+            else {
+                const message = axiosError.message || 'Unknown error';
+                const responseData = data ? `\nResponse: ${JSON.stringify(data)}` : '';
+                throw new Error(`Failed to send version event (HTTP ${status || 'unknown'}): ${message}${responseData}`);
             }
         }
         // Non-axios errors
@@ -34671,16 +34769,19 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getGitHubMetadata = getGitHubMetadata;
 const github = __importStar(__nccwpck_require__(3228));
 /**
- * Extract GitHub context metadata for deployment event
+ * Extract GitHub context metadata for events
  */
 function getGitHubMetadata() {
     const { context } = github;
-    const { repo, runId, runNumber, sha, actor } = context;
+    const { repo, runId, runNumber, sha, actor, ref } = context;
     // Construct build URL
     const buildUrl = `https://github.com/${repo.owner}/${repo.repo}/actions/runs/${runId}`;
+    // Extract branch name from ref (e.g., refs/heads/main -> main)
+    const scmBranch = ref.startsWith('refs/heads/') ? ref.replace('refs/heads/', '') : ref;
     return {
         scm_repository: `${repo.owner}/${repo.repo}`,
         scm_sha: sha,
+        scm_branch: scmBranch,
         source_system: 'github',
         build_number: String(runNumber),
         invoke_id: String(runId),
@@ -34744,40 +34845,79 @@ async function run() {
         core.info('📦 Versioner Deployment Tracker');
         core.info('================================');
         const inputs = (0, inputs_1.getInputs)();
-        core.info(`Product: ${inputs.productName}`);
-        core.info(`Version: ${inputs.version}`);
-        core.info(`Environment: ${inputs.environment}`);
-        core.info(`Status: ${inputs.status}`);
         // Get GitHub context metadata
         const githubMetadata = (0, github_context_1.getGitHubMetadata)();
+        // Default product_name to repository name if not provided
+        const productName = inputs.productName || githubMetadata.scm_repository.split('/')[1];
+        core.info(`Event Type: ${inputs.eventType}`);
+        core.info(`Product: ${productName}`);
+        core.info(`Version: ${inputs.version}`);
+        if (inputs.environment) {
+            core.info(`Environment: ${inputs.environment}`);
+        }
+        core.info(`Status: ${inputs.status}`);
         core.info(`Repository: ${githubMetadata.scm_repository}`);
         core.info(`SHA: ${githubMetadata.scm_sha}`);
         core.info(`Deployed by: ${githubMetadata.deployed_by}`);
-        // Merge user metadata with GitHub metadata
-        const payload = {
-            product_name: inputs.productName,
-            version: inputs.version,
-            environment: inputs.environment,
-            status: inputs.status,
-            ...githubMetadata,
-            extra_metadata: {
-                ...inputs.metadata,
-            },
-        };
-        // Send deployment event to Versioner API
+        // Route to appropriate endpoint based on event type
         core.info('');
-        core.info('Sending deployment event to Versioner...');
-        const response = await (0, api_client_1.sendDeploymentEvent)(inputs.apiUrl, inputs.apiKey, payload);
-        // Set outputs
-        core.setOutput('deployment_id', response.deployment_id);
-        core.setOutput('event_id', response.event_id);
-        // Success summary
-        core.info('');
-        core.info('✅ Deployment tracked successfully!');
-        core.info(`   Deployment ID: ${response.deployment_id}`);
-        core.info(`   Event ID: ${response.event_id}`);
-        // Create GitHub annotation for visibility
-        core.notice(`Deployment tracked: ${inputs.productName}@${inputs.version} → ${inputs.environment} (${inputs.status})`);
+        if (inputs.eventType === 'build') {
+            // Build version event payload
+            const payload = {
+                product_name: productName,
+                version: inputs.version,
+                scm_repository: githubMetadata.scm_repository,
+                scm_sha: githubMetadata.scm_sha,
+                scm_branch: githubMetadata.scm_branch,
+                source_system: githubMetadata.source_system,
+                build_number: githubMetadata.build_number,
+                invoke_id: githubMetadata.invoke_id,
+                build_url: githubMetadata.build_url,
+                built_by: githubMetadata.deployed_by,
+                extra_metadata: inputs.metadata,
+            };
+            core.info('Sending version event to Versioner...');
+            const response = await (0, api_client_1.sendVersionEvent)(inputs.apiUrl, inputs.apiKey, payload, inputs.failOnRejection);
+            // Set outputs
+            core.setOutput('version_id', response.version_id);
+            core.setOutput('product_id', response.product_id);
+            // Success summary
+            core.info('');
+            core.info(`✅ Build tracked successfully!`);
+            core.info(`   Version ID: ${response.version_id}`);
+            core.info(`   Product ID: ${response.product_id}`);
+            // Create GitHub annotation for visibility
+            core.notice(`Build tracked: ${productName}@${inputs.version} (${inputs.status})`);
+        }
+        else {
+            // Build deployment event payload
+            const payload = {
+                product_name: productName,
+                version: inputs.version,
+                environment: inputs.environment,
+                status: inputs.status,
+                scm_repository: githubMetadata.scm_repository,
+                scm_sha: githubMetadata.scm_sha,
+                source_system: githubMetadata.source_system,
+                build_number: githubMetadata.build_number,
+                invoke_id: githubMetadata.invoke_id,
+                build_url: githubMetadata.build_url,
+                deployed_by: githubMetadata.deployed_by,
+                extra_metadata: inputs.metadata,
+            };
+            core.info('Sending deployment event to Versioner...');
+            const response = await (0, api_client_1.sendDeploymentEvent)(inputs.apiUrl, inputs.apiKey, payload, inputs.failOnRejection);
+            // Set outputs
+            core.setOutput('deployment_id', response.deployment_id);
+            core.setOutput('event_id', response.event_id);
+            // Success summary
+            core.info('');
+            core.info(`✅ Deployment tracked successfully!`);
+            core.info(`   Deployment ID: ${response.deployment_id}`);
+            core.info(`   Event ID: ${response.event_id}`);
+            // Create GitHub annotation for visibility
+            core.notice(`Deployment tracked: ${productName}@${inputs.version} → ${inputs.environment} (${inputs.status})`);
+        }
     }
     catch (error) {
         // Handle errors and fail the action
@@ -34840,19 +34980,30 @@ const core = __importStar(__nccwpck_require__(7484));
 function getInputs() {
     const apiUrl = core.getInput('api_url', { required: true });
     const apiKey = core.getInput('api_key', { required: true });
-    const productName = core.getInput('product_name', { required: true });
+    const productName = core.getInput('product_name', { required: false }) || '';
     const version = core.getInput('version', { required: true });
-    const environment = core.getInput('environment', { required: true });
+    const environment = core.getInput('environment', { required: false }) || '';
+    const eventType = core.getInput('event_type', { required: false }) || 'deployment';
     const status = core.getInput('status', { required: false }) || 'success';
     const metadataInput = core.getInput('metadata', { required: false }) || '{}';
+    const failOnRejectionInput = core.getInput('fail_on_rejection', { required: false }) || 'false';
     // Validate API URL format
     if (!apiUrl.startsWith('http://') && !apiUrl.startsWith('https://')) {
         throw new Error(`Invalid api_url: must start with http:// or https://`);
+    }
+    // Validate event_type
+    const validEventTypes = ['build', 'deployment'];
+    if (!validEventTypes.includes(eventType)) {
+        throw new Error(`Invalid event_type: '${eventType}'. Must be one of: ${validEventTypes.join(', ')}`);
     }
     // Validate status
     const validStatuses = ['success', 'failure', 'in_progress'];
     if (!validStatuses.includes(status)) {
         throw new Error(`Invalid status: '${status}'. Must be one of: ${validStatuses.join(', ')}`);
+    }
+    // Validate environment is provided for deployment events
+    if (eventType === 'deployment' && !environment) {
+        throw new Error(`environment is required when event_type is 'deployment'`);
     }
     // Parse metadata JSON
     let metadata = {};
@@ -34865,14 +35016,18 @@ function getInputs() {
     catch (error) {
         throw new Error(`Invalid metadata JSON: ${error instanceof Error ? error.message : String(error)}`);
     }
+    // Parse fail_on_rejection boolean
+    const failOnRejection = failOnRejectionInput.toLowerCase() === 'true';
     return {
         apiUrl,
         apiKey,
         productName,
         version,
         environment,
+        eventType,
         status,
         metadata,
+        failOnRejection,
     };
 }
 

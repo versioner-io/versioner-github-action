@@ -4,7 +4,9 @@ This document provides comprehensive examples of using the Versioner GitHub Acti
 
 ## Table of Contents
 
-- [Basic Usage](#basic-usage)
+- [Build Events](#build-events)
+- [Deployment Events](#deployment-events)
+- [Build + Deploy Workflow](#build--deploy-workflow)
 - [Multi-Environment Deployments](#multi-environment-deployments)
 - [Semantic Versioning](#semantic-versioning)
 - [Custom Metadata](#custom-metadata)
@@ -13,7 +15,62 @@ This document provides comprehensive examples of using the Versioner GitHub Acti
 - [Matrix Deployments](#matrix-deployments)
 - [Using Outputs](#using-outputs)
 
-## Basic Usage
+## Build Events
+
+### Track a Build (No Deployment)
+
+Perfect for CI pipelines that build artifacts but don't deploy them immediately.
+
+```yaml
+name: Build and Test
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build application
+        run: |
+          npm install
+          npm run build
+          npm test
+
+      - name: Track build in Versioner
+        uses: versioner-io/versioner-github-action@v1
+        with:
+          api_url: ${{ secrets.VERSIONER_API_URL }}
+          api_key: ${{ secrets.VERSIONER_API_KEY }}
+          version: ${{ github.sha }}
+          event_type: build
+          # No environment needed!
+          # product_name defaults to repository name
+```
+
+### Track Build with Custom Product Name
+
+```yaml
+- name: Track build
+  uses: versioner-io/versioner-github-action@v1
+  with:
+    api_url: ${{ secrets.VERSIONER_API_URL }}
+    api_key: ${{ secrets.VERSIONER_API_KEY }}
+    product_name: my-custom-service-name
+    version: ${{ github.sha }}
+    event_type: build
+    metadata: |
+      {
+        "build_type": "production-ready",
+        "tests_passed": true
+      }
+```
+
+## Deployment Events
 
 ### Simple Deployment Tracking
 
@@ -41,6 +98,89 @@ jobs:
           product_name: my-api-service
           version: ${{ github.sha }}
           environment: production
+```
+
+## Build + Deploy Workflow
+
+### Separate Build and Deployment Steps
+
+Track builds separately from deployments - useful when builds happen in CI but deployments are triggered separately (e.g., via Rundeck, ArgoCD, or manual approval).
+
+```yaml
+name: Build and Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set version
+        id: version
+        run: echo "sha=${{ github.sha }}" >> $GITHUB_OUTPUT
+
+      - name: Build and test
+        run: |
+          npm install
+          npm run build
+          npm test
+
+      - name: Push artifacts
+        run: |
+          docker build -t myapp:${{ github.sha }} .
+          docker push myapp:${{ github.sha }}
+
+      - name: Track build in Versioner
+        uses: versioner-io/versioner-github-action@v1
+        with:
+          api_url: ${{ secrets.VERSIONER_API_URL }}
+          api_key: ${{ secrets.VERSIONER_API_KEY }}
+          version: ${{ github.sha }}
+          event_type: build
+          status: success
+
+  deploy-staging:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to staging
+        run: ./deploy.sh staging ${{ needs.build.outputs.version }}
+
+      - name: Track deployment in Versioner
+        uses: versioner-io/versioner-github-action@v1
+        with:
+          api_url: ${{ secrets.VERSIONER_API_URL }}
+          api_key: ${{ secrets.VERSIONER_API_KEY }}
+          version: ${{ needs.build.outputs.version }}
+          environment: staging
+          event_type: deployment
+
+  deploy-production:
+    needs: [build, deploy-staging]
+    runs-on: ubuntu-latest
+    environment: production  # Requires manual approval
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to production
+        run: ./deploy.sh production ${{ needs.build.outputs.version }}
+
+      - name: Track deployment in Versioner
+        uses: versioner-io/versioner-github-action@v1
+        with:
+          api_url: ${{ secrets.VERSIONER_API_URL }}
+          api_key: ${{ secrets.VERSIONER_API_KEY }}
+          version: ${{ needs.build.outputs.version }}
+          environment: production
+          event_type: deployment
 ```
 
 ## Multi-Environment Deployments

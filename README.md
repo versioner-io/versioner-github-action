@@ -19,7 +19,25 @@ Versioner captures deployment events from your CI/CD pipelines and provides:
 
 ## 🚀 Quick Start
 
-Add this action to your GitHub workflow to automatically report deployments to Versioner:
+Get started in 5 minutes:
+
+### 1. Get API Credentials
+
+1. Sign up at [versioner.io](https://versioner.io)
+2. Create an API key in your account settings
+3. Note your API endpoint (e.g., `https://api.versioner.io`)
+
+### 2. Add GitHub Secrets
+
+Go to your repository → **Settings** → **Secrets and variables** → **Actions**
+
+Add two secrets:
+- `VERSIONER_API_URL` - Your API endpoint
+- `VERSIONER_API_KEY` - Your API key
+
+### 3. Add to Your Workflow
+
+Create or update `.github/workflows/deploy.yml`:
 
 ```yaml
 name: Deploy to Production
@@ -35,20 +53,27 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Deploy application
-        run: |
-          # Your deployment commands here
-          ./deploy.sh production
+        run: ./deploy.sh production
 
-      - name: Report deployment to Versioner
+      - name: Track deployment in Versioner
         uses: versioner-io/versioner-github-action@v1
         with:
-          api_url: https://api.versioner.io
+          api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           product_name: my-api-service
           version: ${{ github.sha }}
           environment: production
-          status: success
 ```
+
+### 4. Push and Deploy
+
+```bash
+git add .github/workflows/deploy.yml
+git commit -m "Add Versioner tracking"
+git push origin main
+```
+
+Check the **Actions** tab to see your deployment tracked!
 
 ## 📝 Inputs
 
@@ -56,22 +81,39 @@ jobs:
 |-------|----------|---------|-------------|
 | `api_url` | ✅ | - | Versioner API endpoint (e.g., `https://api.versioner.io`) |
 | `api_key` | ✅ | - | Versioner API key (store in GitHub Secrets) |
-| `product_name` | ✅ | - | Name of the product/service being deployed |
+| `product_name` | ❌ | repo name | Name of the product/service (defaults to repository name) |
 | `version` | ✅ | - | Version identifier (e.g., git SHA, semantic version, build number) |
-| `environment` | ✅ | - | Target environment (e.g., `production`, `staging`, `dev`) |
-| `status` | ❌ | `success` | Deployment status (`success`, `failure`, `in_progress`) |
-| `metadata` | ❌ | - | Additional JSON metadata to attach to the deployment event |
+| `environment` | ❌ | - | Target environment (required for deployment events, optional for build events) |
+| `event_type` | ❌ | `deployment` | Event type: `build` or `deployment` |
+| `status` | ❌ | `success` | Event status (`success`, `failure`, `in_progress`) |
+| `metadata` | ❌ | `{}` | Additional JSON metadata to attach to the event |
+| `fail_on_rejection` | ❌ | `false` | Fail the workflow if Versioner rejects the deployment (e.g., conflicts, no-deploy windows) |
 
 ## 📤 Outputs
 
 | Output | Description |
 |--------|-------------|
-| `deployment_id` | UUID of the created deployment record |
-| `event_id` | UUID of the deployment event |
+| `deployment_id` | UUID of the created deployment record (deployment events only) |
+| `event_id` | UUID of the deployment event (deployment events only) |
+| `version_id` | UUID of the created version record (build events only) |
+| `product_id` | UUID of the product (all events) |
 
 ## 🔧 Usage Examples
 
-### Basic Usage
+### Track a Build (No Deployment)
+
+```yaml
+- name: Track build
+  uses: versioner-io/versioner-github-action@v1
+  with:
+    api_url: ${{ secrets.VERSIONER_API_URL }}
+    api_key: ${{ secrets.VERSIONER_API_KEY }}
+    version: ${{ github.sha }}
+    event_type: build
+    # No environment needed - just tracking the build!
+```
+
+### Track a Deployment
 
 ```yaml
 - name: Report deployment
@@ -82,6 +124,7 @@ jobs:
     product_name: my-service
     version: ${{ github.sha }}
     environment: production
+    event_type: deployment
 ```
 
 ### With Semantic Versioning
@@ -137,6 +180,21 @@ jobs:
     version: ${{ github.sha }}
     environment: production
     status: ${{ steps.deploy.outcome }}
+```
+
+### Enforce Deployment Policies
+
+Fail the workflow if Versioner rejects the deployment (e.g., no-deploy windows, concurrent deployments):
+
+```yaml
+- name: Deploy to production
+  uses: versioner-io/versioner-github-action@v1
+  with:
+    api_url: ${{ secrets.VERSIONER_API_URL }}
+    api_key: ${{ secrets.VERSIONER_API_KEY }}
+    version: ${{ github.sha }}
+    environment: production
+    fail_on_rejection: true  # Fail if Versioner blocks deployment
 ```
 
 ### Multi-Environment Deployment

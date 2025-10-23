@@ -6,9 +6,10 @@ Thank you for your interest in contributing! This document provides guidelines a
 
 ### Prerequisites
 
-- Node.js 20.x or later
-- npm 9.x or later
-- Git
+- **Node.js 20.x** or later (use `nvm` to manage versions)
+- **npm 9.x** or later
+- **Git**
+- A **Versioner account** with API access (for integration testing)
 
 ### Getting Started
 
@@ -23,10 +24,21 @@ Thank you for your interest in contributing! This document provides guidelines a
    npm install
    ```
 
+   This installs:
+   - `@actions/core` and `@actions/github` - GitHub Actions toolkit
+   - `axios` - HTTP client
+   - TypeScript and build tools
+   - Testing framework (Jest)
+   - Linting and formatting tools
+
 3. **Build the action:**
    ```bash
    npm run build
    ```
+
+   This compiles TypeScript to JavaScript and bundles everything into `dist/index.js` using `@vercel/ncc`.
+
+   **Important:** The `dist/` directory must be committed because GitHub Actions runs the compiled code, not the TypeScript source.
 
 ## Development Workflow
 
@@ -155,6 +167,68 @@ git commit -m "build: update dist"
 ```
 
 **Important:** Always rebuild and commit `dist/` before creating a pull request.
+
+### Available Scripts
+
+| Script | Description |
+|--------|-------------|
+| `npm run build` | Compile TypeScript and bundle with ncc |
+| `npm test` | Run Jest tests |
+| `npm run lint` | Run ESLint |
+| `npm run format` | Format code with Prettier |
+| `npm run all` | Run format, lint, build, and test |
+
+### Local Testing (Without GitHub Actions)
+
+You can test the TypeScript code locally by setting environment variables:
+
+```bash
+# Set environment variables to simulate GitHub Actions inputs
+export INPUT_API_URL="https://api.versioner.io"
+export INPUT_API_KEY="sk_test_xxx"
+export INPUT_PRODUCT_NAME="test-product"
+export INPUT_VERSION="1.0.0"
+export INPUT_ENVIRONMENT="test"
+export INPUT_STATUS="success"
+export INPUT_METADATA="{}"
+
+# Run the compiled action
+node dist/index.js
+```
+
+### Common Issues
+
+#### `dist/` is out of date
+
+**Error:** CI fails with "dist/ directory is out of date"
+
+**Solution:** Rebuild and commit:
+```bash
+npm run build
+git add dist/
+git commit -m "build: update dist"
+```
+
+#### Tests failing
+
+**Error:** Tests fail locally
+
+**Solution:** Clear Jest cache and reinstall:
+```bash
+npm run test -- --clearCache
+rm -rf node_modules
+npm install
+npm test
+```
+
+#### TypeScript errors
+
+**Error:** TypeScript compilation errors
+
+**Solution:** Check your `tsconfig.json` and ensure all types are correct:
+```bash
+npx tsc --noEmit
+```
 
 ## Pull Request Process
 

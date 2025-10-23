@@ -1,6 +1,11 @@
 import axios, { AxiosError } from 'axios'
 import * as core from '@actions/core'
-import { DeploymentEventPayload, DeploymentEventResponse } from './types'
+import {
+  DeploymentEventPayload,
+  DeploymentEventResponse,
+  VersionEventPayload,
+  VersionEventResponse,
+} from './types'
 
 /**
  * Send deployment event to Versioner API
@@ -8,7 +13,8 @@ import { DeploymentEventPayload, DeploymentEventResponse } from './types'
 export async function sendDeploymentEvent(
   apiUrl: string,
   apiKey: string,
-  payload: DeploymentEventPayload
+  payload: DeploymentEventPayload,
+  failOnRejection = false
 ): Promise<DeploymentEventResponse> {
   const endpoint = `${apiUrl.replace(/\/$/, '')}/deployment-events/`
 
@@ -33,6 +39,30 @@ export async function sendDeploymentEvent(
       const axiosError = error as AxiosError
       const status = axiosError.response?.status
       const data = axiosError.response?.data
+
+      // Handle rejection status codes (409, 423, 428)
+      if (status === 409 || status === 423 || status === 428) {
+        const errorData = data as { message?: string; error?: string } | undefined
+        const message = errorData?.message || errorData?.error || 'Deployment rejected by Versioner'
+        const rejectionError = `Deployment rejected: ${message}`
+        
+        if (failOnRejection) {
+          throw new Error(rejectionError)
+        } else {
+          core.warning(`⚠️ ${rejectionError}`)
+          core.info('Continuing workflow (fail_on_rejection is false)')
+          // Return a placeholder response when not failing
+          return {
+            deployment_id: '',
+            event_id: '',
+            product_id: '',
+            version_id: '',
+            environment_id: '',
+            status: 'rejected',
+            created_at: new Date().toISOString(),
+          }
+        }
+      }
 
       // Provide detailed error messages
       if (status === 401) {
@@ -63,6 +93,100 @@ export async function sendDeploymentEvent(
         const responseData = data ? `\nResponse: ${JSON.stringify(data)}` : ''
         throw new Error(
           `Failed to send deployment event (HTTP ${status || 'unknown'}): ${message}${responseData}`
+        )
+      }
+    }
+
+    // Non-axios errors
+    throw new Error(
+      `Unexpected error: ${error instanceof Error ? error.message : String(error)}`
+    )
+  }
+}
+
+/**
+ * Send version event (build) to Versioner API
+ */
+export async function sendVersionEvent(
+  apiUrl: string,
+  apiKey: string,
+  payload: VersionEventPayload,
+  failOnRejection = false
+): Promise<VersionEventResponse> {
+  const endpoint = `${apiUrl.replace(/\/$/, '')}/version-events/`
+
+  core.info(`Sending version event to ${endpoint}`)
+  core.debug(`Payload: ${JSON.stringify(payload, null, 2)}`)
+
+  try {
+    const response = await axios.post<VersionEventResponse>(endpoint, payload, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      timeout: 30000, // 30 second timeout
+    })
+
+    core.info(`✅ Version event created successfully`)
+    core.debug(`Response: ${JSON.stringify(response.data, null, 2)}`)
+
+    return response.data
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError
+      const status = axiosError.response?.status
+      const data = axiosError.response?.data
+
+      // Handle rejection status codes (409, 423, 428)
+      if (status === 409 || status === 423 || status === 428) {
+        const errorData = data as { message?: string; error?: string } | undefined
+        const message = errorData?.message || errorData?.error || 'Build rejected by Versioner'
+        const rejectionError = `Build rejected: ${message}`
+        
+        if (failOnRejection) {
+          throw new Error(rejectionError)
+        } else {
+          core.warning(`⚠️ ${rejectionError}`)
+          core.info('Continuing workflow (fail_on_rejection is false)')
+          // Return a placeholder response when not failing
+          return {
+            version_id: '',
+            product_id: '',
+            version: payload.version,
+            created_at: new Date().toISOString(),
+          }
+        }
+      }
+
+      // Provide detailed error messages
+      if (status === 401) {
+        throw new Error(
+          `Authentication failed: Invalid API key. Please check your VERSIONER_API_KEY secret.`
+        )
+      } else if (status === 403) {
+        throw new Error(
+          `Authorization failed: API key does not have permission to create version events.`
+        )
+      } else if (status === 422) {
+        const detail = data && typeof data === 'object' ? JSON.stringify(data) : String(data)
+        throw new Error(`Validation error: ${detail}`)
+      } else if (status === 404) {
+        throw new Error(
+          `API endpoint not found. Please check your api_url: ${apiUrl}`
+        )
+      } else if (axiosError.code === 'ECONNREFUSED') {
+        throw new Error(
+          `Connection refused: Unable to connect to ${apiUrl}. Please check the API URL.`
+        )
+      } else if (axiosError.code === 'ETIMEDOUT') {
+        throw new Error(
+          `Request timeout: The API did not respond within 30 seconds. Please try again.`
+        )
+      } else {
+        const message = axiosError.message || 'Unknown error'
+        const responseData = data ? `\nResponse: ${JSON.stringify(data)}` : ''
+        throw new Error(
+          `Failed to send version event (HTTP ${status || 'unknown'}): ${message}${responseData}`
         )
       }
     }

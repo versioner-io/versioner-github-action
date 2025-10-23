@@ -14,28 +14,42 @@ inputs:
     description: 'Versioner API key (store in GitHub Secrets)'
     required: true
   product_name:
-    description: 'Name of the product/service being deployed'
-    required: true
+    description: 'Name of the product/service (defaults to repository name if not provided)'
+    required: false
+    default: ''
   version:
     description: 'Version identifier (e.g., git SHA, semantic version, build number)'
     required: true
   environment:
-    description: 'Target environment (e.g., production, staging, dev)'
-    required: true
+    description: 'Target environment (optional for build-only events)'
+    required: false
+    default: ''
+  event_type:
+    description: 'Event type: build or deployment'
+    required: false
+    default: 'deployment'
   status:
-    description: 'Deployment status (success, failure, in_progress)'
+    description: 'Event status (success, failure, in_progress)'
     required: false
     default: 'success'
   metadata:
-    description: 'Additional JSON metadata to attach to the deployment event'
+    description: 'Additional JSON metadata to attach to the event'
     required: false
     default: '{}'
+  fail_on_rejection:
+    description: 'Fail the workflow if Versioner rejects the deployment (e.g., conflicts, no-deploy windows)'
+    required: false
+    default: 'false'
 
 outputs:
   deployment_id:
-    description: 'UUID of the created deployment record'
+    description: 'UUID of the created deployment record (deployment events only)'
   event_id:
-    description: 'UUID of the deployment event'
+    description: 'UUID of the deployment event (deployment events only)'
+  version_id:
+    description: 'UUID of the created version record (build events only)'
+  product_id:
+    description: 'UUID of the product (all events)'
 
 runs:
   using: 'node20'

@@ -1,0 +1,44 @@
+# Versioner GitHub Action - Development Guide
+
+## Project Type
+TypeScript GitHub Action using @vercel/ncc for bundling
+
+## Documentation Strategy
+
+**Single Source of Project/Development plan:** `TODO.md`
+- This is the canonical plan tracking all phases and tasks
+- Update it as you complete tasks (mark ✅, add notes, issues)
+- Don't create new status files or session summaries
+
+**Keep Documentation DRY:**
+- Consolidate related information into existing docs whenever possible
+- Avoid duplicate content across files
+- Delete outdated or redundant docs
+
+**Key Files for Context:**
+1. [TODO.md](cci:7://file:///Users/phil.austin/projects/versioner/versioner-github-action/TODO.md:0:0-0:0) - Current development plan and task tracking
+2. [action.yml](cci:7://file:///Users/phil.austin/projects/versioner/versioner-github-action/action.yml:0:0-0:0) - Action inputs/outputs definition
+3. [src/types.ts](cci:7://file:///Users/phil.austin/projects/versioner/versioner-github-action/src/types.ts:0:0-0:0) - All TypeScript interfaces
+4. [src/index.ts](cci:7://file:///Users/phil.austin/projects/versioner/versioner-github-action/src/index.ts:0:0-0:0) - Main action logic
+5. [src/api-client.ts](cci:7://file:///Users/phil.austin/projects/versioner/versioner-github-action/src/api-client.ts:0:0-0:0) - API communication
+6. [README.md](cci:7://file:///Users/phil.austin/projects/versioner/versioner-github-action/README.md:0:0-0:0) - User documentation
+7. [EXAMPLES.md](cci:7://file:///Users/phil.austin/projects/versioner/versioner-github-action/EXAMPLES.md:0:0-0:0) - Usage examples
+
+## Architecture
+- **Dual-mode operation**: `event_type: build` or `event_type: deployment`
+- **Build events** → POST to `/version-events/`
+- **Deployment events** → POST to `/deployment-events/`
+- **Rejection handling**: HTTP 409/423/428 with `fail_on_rejection` input
+
+## Code Style
+- Lines should not contain only whitespace (blank lines must be completely empty)
+- Use TypeScript strict mode
+- Follow existing patterns in codebase
+
+## Development Workflow
+```bash
+npm test              # Run Jest tests
+npm run build         # Build with ncc
+npm run lint          # ESLint check
+npm run format        # Prettier format
+```

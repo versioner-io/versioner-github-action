@@ -11,6 +11,7 @@ jest.mock('@actions/github', () => ({
     runNumber: 42,
     sha: 'abc123def456',
     actor: 'test-user',
+    ref: 'refs/heads/main',
   },
 }))
 
@@ -21,6 +22,7 @@ describe('getGitHubMetadata', () => {
     expect(metadata).toEqual({
       scm_repository: 'test-owner/test-repo',
       scm_sha: 'abc123def456',
+      scm_branch: 'main',
       source_system: 'github',
       build_number: '42',
       invoke_id: '12345',
