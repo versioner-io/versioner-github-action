@@ -1,33 +1,268 @@
-name: Test Action
+name: Integration Tests
 
 on:
   workflow_dispatch:
     inputs:
-      environment:
-        description: 'Test environment'
+      api_environment:
+        description: 'API Environment (dev or prod)'
         required: false
-        default: 'test'
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - prod
 
 jobs:
-  test-action:
-    name: Test Versioner Action
+  test-build-event:
+    name: Test Build Event
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Test action
+      - name: Track build event
+        id: build
         uses: ./
         with:
-          api_url: ${{ secrets.VERSIONER_API_URL }}
+          api_url: ${{ github.event.inputs.api_environment == 'prod' && 'https://api.versioner.io' || 'https://api-development.versioner.io' }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
-          product_name: versioner-github-action
+          product_name: versioner-github-action-test
           version: ${{ github.sha }}
-          environment: ${{ github.event.inputs.environment || 'test' }}
+          event_type: build
           status: success
           metadata: |
             {
+              "test_type": "build_event",
               "test_run": true,
-              "workflow": "test-action"
+              "timestamp": "${{ github.run_id }}"
             }
+
+      - name: Verify outputs
+        run: |
+          echo "✅ Build event tracked"
+          echo "Version ID: ${{ steps.build.outputs.version_id }}"
+          echo "Product ID: ${{ steps.build.outputs.product_id }}"
+
+  test-deployment-event:
+    name: Test Deployment Event
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Track deployment event
+        id: deploy
+        uses: ./
+        with:
+          api_url: ${{ github.event.inputs.api_environment == 'prod' && 'https://api.versioner.io' || 'https://api-development.versioner.io' }}
+          api_key: ${{ secrets.VERSIONER_API_KEY }}
+          product_name: versioner-github-action-test
+          version: ${{ github.sha }}
+          environment: test
+          event_type: deployment
+          status: success
+          metadata: |
+            {
+              "test_type": "deployment_event",
+              "test_run": true,
+              "timestamp": "${{ github.run_id }}"
+            }
+
+      - name: Verify outputs
+        run: |
+          echo "✅ Deployment event tracked"
+          echo "Deployment ID: ${{ steps.deploy.outputs.deployment_id }}"
+          echo "Event ID: ${{ steps.deploy.outputs.event_id }}"
+          echo "Product ID: ${{ steps.deploy.outputs.product_id }}"
+
+  test-multi-environment:
+    name: Test Multi-Environment Deployments
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to staging
+        uses: ./
+        with:
+          api_url: ${{ github.event.inputs.api_environment == 'prod' && 'https://api.versioner.io' || 'https://api-development.versioner.io' }}
+          api_key: ${{ secrets.VERSIONER_API_KEY }}
+          product_name: versioner-github-action-test
+          version: ${{ github.sha }}
+          environment: staging
+          event_type: deployment
+          status: success
+
+      - name: Deploy to production
+        uses: ./
+        with:
+          api_url: ${{ github.event.inputs.api_environment == 'prod' && 'https://api.versioner.io' || 'https://api-development.versioner.io' }}
+          api_key: ${{ secrets.VERSIONER_API_KEY }}
+          product_name: versioner-github-action-test
+          version: ${{ github.sha }}
+          environment: production
+          event_type: deployment
+          status: success
+
+      - name: Summary
+        run: echo "✅ Multi-environment deployment tracked"
+
+  test-failure-status:
+    name: Test Failure Status
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Track failed deployment
+        uses: ./
+        with:
+          api_url: ${{ github.event.inputs.api_environment == 'prod' && 'https://api.versioner.io' || 'https://api-development.versioner.io' }}
+          api_key: ${{ secrets.VERSIONER_API_KEY }}
+          product_name: versioner-github-action-test
+          version: ${{ github.sha }}-failed
+          environment: test
+          event_type: deployment
+          status: failure
+          metadata: |
+            {
+              "test_type": "failure_status",
+              "error": "Simulated deployment failure"
+            }
+
+      - name: Summary
+        run: echo "✅ Failure status tracked"
+
+  test-in-progress-status:
+    name: Test In-Progress Status
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Track in-progress deployment
+        uses: ./
+        with:
+          api_url: ${{ github.event.inputs.api_environment == 'prod' && 'https://api.versioner.io' || 'https://api-development.versioner.io' }}
+          api_key: ${{ secrets.VERSIONER_API_KEY }}
+          product_name: versioner-github-action-test
+          version: ${{ github.sha }}-in-progress
+          environment: test
+          event_type: deployment
+          status: in_progress
+          metadata: |
+            {
+              "test_type": "in_progress_status"
+            }
+
+      - name: Summary
+        run: echo "✅ In-progress status tracked"
+
+  test-custom-metadata:
+    name: Test Custom Metadata
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Track with rich metadata
+        uses: ./
+        with:
+          api_url: ${{ github.event.inputs.api_environment == 'prod' && 'https://api.versioner.io' || 'https://api-development.versioner.io' }}
+          api_key: ${{ secrets.VERSIONER_API_KEY }}
+          product_name: versioner-github-action-test
+          version: ${{ github.sha }}
+          environment: test
+          event_type: deployment
+          status: success
+          metadata: |
+            {
+              "test_type": "custom_metadata",
+              "deployment_duration_seconds": 120,
+              "deployment_strategy": "blue-green",
+              "region": "us-east-1",
+              "replicas": 3,
+              "custom_tags": ["test", "integration", "automated"]
+            }
+
+      - name: Summary
+        run: echo "✅ Custom metadata tracked"
+
+  test-semantic-version:
+    name: Test Semantic Versioning
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Track with semantic version
+        uses: ./
+        with:
+          api_url: ${{ github.event.inputs.api_environment == 'prod' && 'https://api.versioner.io' || 'https://api-development.versioner.io' }}
+          api_key: ${{ secrets.VERSIONER_API_KEY }}
+          product_name: versioner-github-action-test
+          version: v1.2.3-test.${{ github.run_number }}
+          environment: test
+          event_type: deployment
+          status: success
+          metadata: |
+            {
+              "test_type": "semantic_version",
+              "version_format": "semver"
+            }
+
+      - name: Summary
+        run: echo "✅ Semantic version tracked"
+
+  test-default-product-name:
+    name: Test Default Product Name
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Track without explicit product name
+        uses: ./
+        with:
+          api_url: ${{ github.event.inputs.api_environment == 'prod' && 'https://api.versioner.io' || 'https://api-development.versioner.io' }}
+          api_key: ${{ secrets.VERSIONER_API_KEY }}
+          version: ${{ github.sha }}
+          environment: test
+          event_type: deployment
+          status: success
+          metadata: |
+            {
+              "test_type": "default_product_name"
+            }
+
+      - name: Summary
+        run: echo "✅ Default product name (repo name) used"
+
+  summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs:
+      - test-build-event
+      - test-deployment-event
+      - test-multi-environment
+      - test-failure-status
+      - test-in-progress-status
+      - test-custom-metadata
+      - test-semantic-version
+      - test-default-product-name
+    steps:
+      - name: Summary
+        run: |
+          echo "🎉 All integration tests passed!"
+          echo ""
+          echo "Tested scenarios:"
+          echo "  ✅ Build events"
+          echo "  ✅ Deployment events"
+          echo "  ✅ Multi-environment deployments"
+          echo "  ✅ Failure status"
+          echo "  ✅ In-progress status"
+          echo "  ✅ Custom metadata"
+          echo "  ✅ Semantic versioning"
+          echo "  ✅ Default product name"
+          echo ""
+          echo "Check Versioner dashboard to verify events were recorded correctly."
