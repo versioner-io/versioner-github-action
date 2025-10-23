@@ -68,9 +68,10 @@ jobs:
 
       - name: Compare dist/
         run: |
-          if [ "$(git diff --ignore-space-at-eol dist/ | wc -l)" -gt "0" ]; then
+          # Ignore .map files as they contain absolute paths that differ between environments
+          if [ "$(git diff --ignore-space-at-eol dist/ -- ':!*.map' | wc -l)" -gt "0" ]; then
             echo "Error: dist/ directory is out of date"
             echo "Please run 'npm run build' and commit the changes"
-            git diff dist/
+            git diff dist/ -- ':!*.map'
             exit 1
           fi
