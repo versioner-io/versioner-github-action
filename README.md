@@ -42,7 +42,7 @@ jobs:
       - name: Report deployment to Versioner
         uses: versioner-io/versioner-github-action@v1
         with:
-          api_url: https://api.versioner.dev
+          api_url: https://api.versioner.io
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           product_name: my-api-service
           version: ${{ github.sha }}
@@ -54,7 +54,7 @@ jobs:
 
 | Input | Required | Default | Description |
 |-------|----------|---------|-------------|
-| `api_url` | ✅ | - | Versioner API endpoint (e.g., `https://api.versioner.dev`) |
+| `api_url` | ✅ | - | Versioner API endpoint (e.g., `https://api.versioner.io`) |
 | `api_key` | ✅ | - | Versioner API key (store in GitHub Secrets) |
 | `product_name` | ✅ | - | Name of the product/service being deployed |
 | `version` | ✅ | - | Version identifier (e.g., git SHA, semantic version, build number) |
@@ -174,14 +174,14 @@ jobs:
 ## 🔐 Setting Up Secrets
 
 1. **Get your Versioner API key:**
-   - Sign up at [versioner.dev](https://versioner.dev)
+   - Sign up at [versioner.io](https://versioner.io)
    - Create an API key in your account settings
    - Note your API endpoint URL
 
 2. **Add secrets to your GitHub repository:**
    - Go to your repository → Settings → Secrets and variables → Actions
    - Add `VERSIONER_API_KEY` with your API key
-   - Add `VERSIONER_API_URL` with your API endpoint (e.g., `https://api.versioner.dev`)
+   - Add `VERSIONER_API_URL` with your API endpoint (e.g., `https://api.versioner.io`)
 
 ## 🤖 Auto-Populated Metadata
 
@@ -244,9 +244,9 @@ MIT License - see [LICENSE](./LICENSE) for details.
 
 ## 🆘 Support
 
-- **Documentation:** [docs.versioner.dev](https://docs.versioner.dev)
+- **Documentation:** [docs.versioner.io](https://docs.versioner.io)
 - **Issues:** [GitHub Issues](https://github.com/versioner-io/versioner-github-action/issues)
-- **Email:** support@versioner.dev
+- **Email:** support@versioner.io
 
 ## 🙏 Contributing
 

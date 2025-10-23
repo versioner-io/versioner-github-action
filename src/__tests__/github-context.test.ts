@@ -1,4 +1,3 @@
-import * as github from '@actions/github'
 import { getGitHubMetadata } from '../github-context'
 
 // Mock @actions/github

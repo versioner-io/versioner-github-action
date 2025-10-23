@@ -2,7 +2,7 @@
 node_modules/
 
 # Build output
-dist/
+# NOTE: dist/ is NOT ignored because GitHub Actions needs it committed
 lib/
 
 # TypeScript

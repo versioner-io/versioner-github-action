@@ -14,7 +14,7 @@ describe('getInputs', () => {
   it('should return valid inputs with defaults', () => {
     mockGetInput.mockImplementation((name: string) => {
       const inputs: Record<string, string> = {
-        api_url: 'https://api.versioner.dev',
+        api_url: 'https://api.versioner.io',
         api_key: 'sk_test_key',
         product_name: 'test-product',
         version: '1.0.0',
@@ -28,7 +28,7 @@ describe('getInputs', () => {
     const inputs = getInputs()
 
     expect(inputs).toEqual({
-      apiUrl: 'https://api.versioner.dev',
+      apiUrl: 'https://api.versioner.io',
       apiKey: 'sk_test_key',
       productName: 'test-product',
       version: '1.0.0',
@@ -41,7 +41,7 @@ describe('getInputs', () => {
   it('should parse custom metadata', () => {
     mockGetInput.mockImplementation((name: string) => {
       const inputs: Record<string, string> = {
-        api_url: 'https://api.versioner.dev',
+        api_url: 'https://api.versioner.io',
         api_key: 'sk_test_key',
         product_name: 'test-product',
         version: '1.0.0',
@@ -78,7 +78,7 @@ describe('getInputs', () => {
   it('should throw error for invalid status', () => {
     mockGetInput.mockImplementation((name: string) => {
       const inputs: Record<string, string> = {
-        api_url: 'https://api.versioner.dev',
+        api_url: 'https://api.versioner.io',
         api_key: 'sk_test_key',
         product_name: 'test-product',
         version: '1.0.0',
@@ -94,7 +94,7 @@ describe('getInputs', () => {
   it('should throw error for invalid metadata JSON', () => {
     mockGetInput.mockImplementation((name: string) => {
       const inputs: Record<string, string> = {
-        api_url: 'https://api.versioner.dev',
+        api_url: 'https://api.versioner.io',
         api_key: 'sk_test_key',
         product_name: 'test-product',
         version: '1.0.0',
@@ -110,7 +110,7 @@ describe('getInputs', () => {
   it('should throw error for metadata array', () => {
     mockGetInput.mockImplementation((name: string) => {
       const inputs: Record<string, string> = {
-        api_url: 'https://api.versioner.dev',
+        api_url: 'https://api.versioner.io',
         api_key: 'sk_test_key',
         product_name: 'test-product',
         version: '1.0.0',

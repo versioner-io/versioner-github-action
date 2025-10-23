@@ -32,7 +32,7 @@ What actually happened.
 # Paste your workflow YAML here (remove sensitive data like API keys)
 - uses: versioner-io/versioner-github-action@v1
   with:
-    api_url: https://api.versioner.dev
+    api_url: https://api.versioner.io
     # ... other inputs
 ```
 

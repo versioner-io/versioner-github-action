@@ -4,17 +4,21 @@ Get started with the Versioner GitHub Action in 5 minutes.
 
 ## Step 1: Get Your API Credentials
 
-1. Sign up at [versioner.dev](https://versioner.dev)
+1. Sign up at [versioner.io](https://versioner.io)
 2. Create an API key in your account settings
-3. Note your API endpoint (e.g., `https://api.versioner.dev`)
+3. Note your API endpoint (e.g., `https://api.versioner.io`)
 
 ## Step 2: Add Secrets to GitHub
 
-Go to your repository → **Settings** → **Secrets and variables** → **Actions**
+You can add secrets to your GitHub repository or organization.
+
+For repository level: Go to your repository → **Settings** → **Secrets and variables** → **Actions**
+
+For organization level: Go to your organization → **Settings** → **Secrets and variables** → **Actions**
 
 Add two secrets:
-- `VERSIONER_API_URL` - Your API endpoint
-- `VERSIONER_API_KEY` - Your API key
+- `VERSIONER_API_URL` - Your API endpoint (e.g., `https://api.versioner.io`)
+- `VERSIONER_API_KEY` - Your API key (e.g., `sk_1234567890`)
 
 ## Step 3: Add to Your Workflow
 
@@ -83,4 +87,4 @@ The action automatically captures:
 - 📖 [Full Documentation](./README.md)
 - 💡 [Usage Examples](./EXAMPLES.md)
 - 🐛 [Report Issues](https://github.com/versioner-io/versioner-github-action/issues)
-- 📧 [Email Support](mailto:support@versioner.dev)
+- 📧 [Email Support](mailto:support@versioner.io)

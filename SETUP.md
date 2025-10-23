@@ -107,7 +107,7 @@ You can test the TypeScript code locally:
 
 ```bash
 # Set environment variables to simulate GitHub Actions inputs
-export INPUT_API_URL="https://api.versioner.dev"
+export INPUT_API_URL="https://api.versioner.io"
 export INPUT_API_KEY="sk_test_xxx"
 export INPUT_PRODUCT_NAME="test-product"
 export INPUT_VERSION="1.0.0"
@@ -193,20 +193,20 @@ npx tsc --noEmit
 
 ## Getting Versioner API Credentials
 
-1. Sign up at [versioner.dev](https://versioner.dev)
+1. Sign up at [versioner.io](https://versioner.io)
 2. Navigate to your account settings
 3. Create a new API key
-4. Note your API endpoint URL (e.g., `https://api.versioner.dev`)
+4. Note your API endpoint URL (e.g., `https://api.versioner.io`)
 5. Store these in GitHub Secrets for testing
 
 ## Next Steps
 
 - Read [CONTRIBUTING.md](./CONTRIBUTING.md) for contribution guidelines
 - Check [README.md](./README.md) for usage examples
-- Review the [Versioner API documentation](https://docs.versioner.dev)
+- Review the [Versioner API documentation](https://docs.versioner.io)
 
 ## Support
 
 - **Issues:** [GitHub Issues](https://github.com/versioner-io/versioner-github-action/issues)
-- **Documentation:** [docs.versioner.dev](https://docs.versioner.dev)
-- **Email:** support@versioner.dev
+- **Documentation:** [docs.versioner.io](https://docs.versioner.io)
+- **Email:** support@versioner.io
