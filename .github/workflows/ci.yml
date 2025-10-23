@@ -39,6 +39,8 @@ jobs:
 
       - name: Check for uncommitted changes
         run: |
+          # Ignore .map files as they contain absolute paths that differ between environments
+          git checkout dist/*.map 2>/dev/null || true
           if [ -n "$(git status --porcelain)" ]; then
             echo "Error: Uncommitted changes detected after build"
             echo "Please run 'npm run build' and commit the dist/ directory"
