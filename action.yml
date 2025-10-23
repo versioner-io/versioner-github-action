@@ -8,8 +8,9 @@ branding:
 
 inputs:
   api_url:
-    description: 'Versioner API endpoint URL (e.g., https://api.versioner.io)'
-    required: true
+    description: 'Versioner API endpoint URL (defaults to https://api.versioner.io)'
+    required: false
+    default: 'https://api.versioner.io'
   api_key:
     description: 'Versioner API key (store in GitHub Secrets)'
     required: true

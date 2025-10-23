@@ -27,12 +27,11 @@ Get started in 5 minutes:
 2. Create an API key in your account settings
 3. Note your API endpoint (e.g., `https://api.versioner.io`)
 
-### 2. Add GitHub Secrets
+### 2. Add GitHub Secret
 
 Go to your repository → **Settings** → **Secrets and variables** → **Actions**
 
-Add two secrets:
-- `VERSIONER_API_URL` - Your API endpoint
+Add secret:
 - `VERSIONER_API_KEY` - Your API key
 
 ### 3. Add to Your Workflow
@@ -58,7 +57,6 @@ jobs:
       - name: Track deployment in Versioner
         uses: versioner-io/versioner-github-action@v1
         with:
-          api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           product_name: my-api-service
           version: ${{ github.sha }}
@@ -79,7 +77,7 @@ Check the **Actions** tab to see your deployment tracked!
 
 | Input | Required | Default | Description |
 |-------|----------|---------|-------------|
-| `api_url` | ✅ | - | Versioner API endpoint (e.g., `https://api.versioner.io`) |
+| `api_url` | ❌ | `https://api.versioner.io` | Versioner API endpoint (override for testing or self-hosted) |
 | `api_key` | ✅ | - | Versioner API key (store in GitHub Secrets) |
 | `product_name` | ❌ | repo name | Name of the product/service (defaults to repository name) |
 | `version` | ✅ | - | Version identifier (e.g., git SHA, semantic version, build number) |
@@ -106,7 +104,6 @@ Check the **Actions** tab to see your deployment tracked!
 - name: Track build
   uses: versioner-io/versioner-github-action@v1
   with:
-    api_url: ${{ secrets.VERSIONER_API_URL }}
     api_key: ${{ secrets.VERSIONER_API_KEY }}
     version: ${{ github.sha }}
     event_type: build
@@ -119,7 +116,6 @@ Check the **Actions** tab to see your deployment tracked!
 - name: Report deployment
   uses: versioner-io/versioner-github-action@v1
   with:
-    api_url: ${{ secrets.VERSIONER_API_URL }}
     api_key: ${{ secrets.VERSIONER_API_KEY }}
     product_name: my-service
     version: ${{ github.sha }}
@@ -137,7 +133,6 @@ Check the **Actions** tab to see your deployment tracked!
 - name: Report deployment
   uses: versioner-io/versioner-github-action@v1
   with:
-    api_url: ${{ secrets.VERSIONER_API_URL }}
     api_key: ${{ secrets.VERSIONER_API_KEY }}
     product_name: my-service
     version: ${{ steps.version.outputs.VERSION }}
@@ -150,7 +145,6 @@ Check the **Actions** tab to see your deployment tracked!
 - name: Report deployment with metadata
   uses: versioner-io/versioner-github-action@v1
   with:
-    api_url: ${{ secrets.VERSIONER_API_URL }}
     api_key: ${{ secrets.VERSIONER_API_KEY }}
     product_name: my-service
     version: ${{ github.sha }}
@@ -174,7 +168,6 @@ Check the **Actions** tab to see your deployment tracked!
 - name: Report deployment status
   uses: versioner-io/versioner-github-action@v1
   with:
-    api_url: ${{ secrets.VERSIONER_API_URL }}
     api_key: ${{ secrets.VERSIONER_API_KEY }}
     product_name: my-service
     version: ${{ github.sha }}
@@ -190,7 +183,6 @@ Fail the workflow if Versioner rejects the deployment (e.g., no-deploy windows, 
 - name: Deploy to production
   uses: versioner-io/versioner-github-action@v1
   with:
-    api_url: ${{ secrets.VERSIONER_API_URL }}
     api_key: ${{ secrets.VERSIONER_API_KEY }}
     version: ${{ github.sha }}
     environment: production
@@ -208,7 +200,6 @@ jobs:
       - run: ./deploy.sh staging
       - uses: versioner-io/versioner-github-action@v1
         with:
-          api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           product_name: my-service
           version: ${{ github.sha }}
@@ -222,7 +213,6 @@ jobs:
       - run: ./deploy.sh production
       - uses: versioner-io/versioner-github-action@v1
         with:
-          api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           product_name: my-service
           version: ${{ github.sha }}
@@ -236,10 +226,10 @@ jobs:
    - Create an API key in your account settings
    - Note your API endpoint URL
 
-2. **Add secrets to your GitHub repository:**
+2. **Add secret to your GitHub repository:**
    - Go to your repository → Settings → Secrets and variables → Actions
    - Add `VERSIONER_API_KEY` with your API key
-   - Add `VERSIONER_API_URL` with your API endpoint (e.g., `https://api.versioner.io`)
+   - (Optional) Add `VERSIONER_API_URL` to override the default `https://api.versioner.io`
 
 ## 🤖 Auto-Populated Metadata
 

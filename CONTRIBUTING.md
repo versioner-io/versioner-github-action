@@ -138,7 +138,8 @@ npm test
 Test your changes in a real GitHub workflow:
 
 1. Push your branch to your fork
-2. Create a test workflow in `.github/workflows/test-action.yml`:
+2. Add repository secret `VERSIONER_API_KEY` and optionally variable `VERSIONER_API_URL` (defaults to production)
+3. Create a test workflow in `.github/workflows/test-action.yml`:
    ```yaml
    name: Test Action
    on: [push]
@@ -149,8 +150,9 @@ Test your changes in a real GitHub workflow:
          - uses: actions/checkout@v4
          - uses: ./
            with:
-             api_url: ${{ secrets.VERSIONER_API_URL }}
              api_key: ${{ secrets.VERSIONER_API_KEY }}
+             # api_url is optional - defaults to https://api.versioner.io
+             # Override with: api_url: ${{ vars.VERSIONER_API_URL }}
              product_name: test-product
              version: ${{ github.sha }}
              environment: test
@@ -184,7 +186,8 @@ You can test the TypeScript code locally by setting environment variables:
 
 ```bash
 # Set environment variables to simulate GitHub Actions inputs
-export INPUT_API_URL="https://api.versioner.io"
+# api_url is optional - defaults to https://api.versioner.io
+export INPUT_API_URL="https://api-development.versioner.io"  # Optional: for testing
 export INPUT_API_KEY="sk_test_xxx"
 export INPUT_PRODUCT_NAME="test-product"
 export INPUT_VERSION="1.0.0"

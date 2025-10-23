@@ -2,15 +2,6 @@ name: Integration Tests
 
 on:
   workflow_dispatch:
-    inputs:
-      api_environment:
-        description: 'API Environment (dev or prod)'
-        required: false
-        default: 'dev'
-        type: choice
-        options:
-          - dev
-          - prod
 
 jobs:
   test-build-event:
@@ -24,7 +15,7 @@ jobs:
         id: build
         uses: ./
         with:
-          api_url: ${{ github.event.inputs.api_environment == 'prod' && 'https://api.versioner.io' || 'https://api-development.versioner.io' }}
+          api_url: ${{ vars.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           product_name: versioner-github-action-test
           version: ${{ github.sha }}
@@ -54,7 +45,7 @@ jobs:
         id: deploy
         uses: ./
         with:
-          api_url: ${{ github.event.inputs.api_environment == 'prod' && 'https://api.versioner.io' || 'https://api-development.versioner.io' }}
+          api_url: ${{ vars.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           product_name: versioner-github-action-test
           version: ${{ github.sha }}
@@ -85,7 +76,7 @@ jobs:
       - name: Deploy to staging
         uses: ./
         with:
-          api_url: ${{ github.event.inputs.api_environment == 'prod' && 'https://api.versioner.io' || 'https://api-development.versioner.io' }}
+          api_url: ${{ vars.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           product_name: versioner-github-action-test
           version: ${{ github.sha }}
@@ -96,7 +87,7 @@ jobs:
       - name: Deploy to production
         uses: ./
         with:
-          api_url: ${{ github.event.inputs.api_environment == 'prod' && 'https://api.versioner.io' || 'https://api-development.versioner.io' }}
+          api_url: ${{ vars.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           product_name: versioner-github-action-test
           version: ${{ github.sha }}
@@ -117,7 +108,7 @@ jobs:
       - name: Track failed deployment
         uses: ./
         with:
-          api_url: ${{ github.event.inputs.api_environment == 'prod' && 'https://api.versioner.io' || 'https://api-development.versioner.io' }}
+          api_url: ${{ vars.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           product_name: versioner-github-action-test
           version: ${{ github.sha }}-failed
@@ -143,7 +134,7 @@ jobs:
       - name: Track in-progress deployment
         uses: ./
         with:
-          api_url: ${{ github.event.inputs.api_environment == 'prod' && 'https://api.versioner.io' || 'https://api-development.versioner.io' }}
+          api_url: ${{ vars.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           product_name: versioner-github-action-test
           version: ${{ github.sha }}-in-progress
@@ -168,7 +159,7 @@ jobs:
       - name: Track with rich metadata
         uses: ./
         with:
-          api_url: ${{ github.event.inputs.api_environment == 'prod' && 'https://api.versioner.io' || 'https://api-development.versioner.io' }}
+          api_url: ${{ vars.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           product_name: versioner-github-action-test
           version: ${{ github.sha }}
@@ -198,7 +189,7 @@ jobs:
       - name: Track with semantic version
         uses: ./
         with:
-          api_url: ${{ github.event.inputs.api_environment == 'prod' && 'https://api.versioner.io' || 'https://api-development.versioner.io' }}
+          api_url: ${{ vars.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           product_name: versioner-github-action-test
           version: v1.2.3-test.${{ github.run_number }}
@@ -224,7 +215,7 @@ jobs:
       - name: Track without explicit product name
         uses: ./
         with:
-          api_url: ${{ github.event.inputs.api_environment == 'prod' && 'https://api.versioner.io' || 'https://api-development.versioner.io' }}
+          api_url: ${{ vars.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           version: ${{ github.sha }}
           environment: test

@@ -44,7 +44,6 @@ jobs:
       - name: Track build in Versioner
         uses: versioner-io/versioner-github-action@v1
         with:
-          api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           version: ${{ github.sha }}
           event_type: build
@@ -58,7 +57,6 @@ jobs:
 - name: Track build
   uses: versioner-io/versioner-github-action@v1
   with:
-    api_url: ${{ secrets.VERSIONER_API_URL }}
     api_key: ${{ secrets.VERSIONER_API_KEY }}
     product_name: my-custom-service-name
     version: ${{ github.sha }}
@@ -93,7 +91,6 @@ jobs:
       - name: Track deployment
         uses: versioner-io/versioner-github-action@v1
         with:
-          api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           product_name: my-api-service
           version: ${{ github.sha }}
@@ -139,7 +136,6 @@ jobs:
       - name: Track build in Versioner
         uses: versioner-io/versioner-github-action@v1
         with:
-          api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           version: ${{ github.sha }}
           event_type: build
@@ -157,7 +153,6 @@ jobs:
       - name: Track deployment in Versioner
         uses: versioner-io/versioner-github-action@v1
         with:
-          api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           version: ${{ needs.build.outputs.version }}
           environment: staging
@@ -176,7 +171,6 @@ jobs:
       - name: Track deployment in Versioner
         uses: versioner-io/versioner-github-action@v1
         with:
-          api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           version: ${{ needs.build.outputs.version }}
           environment: production
@@ -202,7 +196,6 @@ jobs:
       - run: ./deploy.sh dev
       - uses: versioner-io/versioner-github-action@v1
         with:
-          api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           product_name: my-service
           version: ${{ github.sha }}
@@ -216,7 +209,6 @@ jobs:
       - run: ./deploy.sh staging
       - uses: versioner-io/versioner-github-action@v1
         with:
-          api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           product_name: my-service
           version: ${{ github.sha }}
@@ -231,7 +223,6 @@ jobs:
       - run: ./deploy.sh production
       - uses: versioner-io/versioner-github-action@v1
         with:
-          api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           product_name: my-service
           version: ${{ github.sha }}
@@ -268,7 +259,6 @@ jobs:
       - name: Track deployment
         uses: versioner-io/versioner-github-action@v1
         with:
-          api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           product_name: my-service
           version: ${{ steps.version.outputs.VERSION }}
@@ -305,7 +295,6 @@ jobs:
       - name: Track deployment
         uses: versioner-io/versioner-github-action@v1
         with:
-          api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           product_name: my-npm-package
           version: ${{ steps.package.outputs.VERSION }}
@@ -350,7 +339,6 @@ jobs:
       - name: Track deployment
         uses: versioner-io/versioner-github-action@v1
         with:
-          api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           product_name: my-service
           version: ${{ github.sha }}
@@ -371,7 +359,6 @@ jobs:
 - name: Track deployment with infrastructure metadata
   uses: versioner-io/versioner-github-action@v1
   with:
-    api_url: ${{ secrets.VERSIONER_API_URL }}
     api_key: ${{ secrets.VERSIONER_API_KEY }}
     product_name: my-service
     version: ${{ github.sha }}
@@ -412,7 +399,6 @@ jobs:
       - name: Track deployment status
         uses: versioner-io/versioner-github-action@v1
         with:
-          api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           product_name: my-service
           version: ${{ github.sha }}
@@ -447,7 +433,6 @@ jobs:
       - name: Start deployment tracking
         uses: versioner-io/versioner-github-action@v1
         with:
-          api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           product_name: my-service
           version: ${{ github.sha }}
@@ -461,7 +446,6 @@ jobs:
         if: always()
         uses: versioner-io/versioner-github-action@v1
         with:
-          api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           product_name: my-service
           version: ${{ github.sha }}
@@ -500,7 +484,6 @@ jobs:
       - name: Track deployment
         uses: versioner-io/versioner-github-action@v1
         with:
-          api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           product_name: my-service
           version: ${{ github.sha }}
@@ -527,7 +510,6 @@ jobs:
       - name: Track deployment
         uses: versioner-io/versioner-github-action@v1
         with:
-          api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           product_name: my-service
           version: ${{ github.ref_name }}
@@ -560,7 +542,6 @@ jobs:
       - name: Track deployment
         uses: versioner-io/versioner-github-action@v1
         with:
-          api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           product_name: my-service
           version: ${{ github.sha }}
@@ -596,7 +577,6 @@ jobs:
       - name: Track deployment
         uses: versioner-io/versioner-github-action@v1
         with:
-          api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           product_name: ${{ matrix.service }}
           version: ${{ github.sha }}
@@ -625,7 +605,6 @@ jobs:
         id: versioner
         uses: versioner-io/versioner-github-action@v1
         with:
-          api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           product_name: my-service
           version: ${{ github.sha }}
@@ -684,7 +663,6 @@ jobs:
       - run: ./deploy-api.sh production
       - uses: versioner-io/versioner-github-action@v1
         with:
-          api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           product_name: my-api
           version: ${{ github.sha }}
@@ -699,7 +677,6 @@ jobs:
       - run: ./deploy-web.sh production
       - uses: versioner-io/versioner-github-action@v1
         with:
-          api_url: ${{ secrets.VERSIONER_API_URL }}
           api_key: ${{ secrets.VERSIONER_API_KEY }}
           product_name: my-web-app
           version: ${{ github.sha }}
@@ -709,8 +686,9 @@ jobs:
 ## Best Practices
 
 1. **Always use GitHub Secrets** for `api_key` - never hardcode credentials
-2. **Use descriptive product names** that match your service naming conventions
-3. **Include relevant metadata** to make deployments searchable and auditable
-4. **Track both successes and failures** for complete visibility
-5. **Use consistent environment names** across your organization
-6. **Leverage outputs** for integration with other tools (Slack, PagerDuty, etc.)
+2. **api_url is optional** - defaults to `https://api.versioner.io` (use variables for testing/self-hosted)
+3. **Use descriptive product names** that match your service naming conventions
+4. **Include relevant metadata** to make deployments searchable and auditable
+5. **Track both successes and failures** for complete visibility
+6. **Use consistent environment names** across your organization
+7. **Leverage outputs** for integration with other tools (Slack, PagerDuty, etc.)

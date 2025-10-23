@@ -49,8 +49,10 @@ This document tracks the remaining tasks to complete the Versioner GitHub Action
 
 **Setup Instructions:**
 1. Add GitHub secret: `VERSIONER_API_KEY` (get from Versioner account)
-2. Run workflow: Actions → "Integration Tests" → Run workflow
-3. Choose environment: `dev` (default) or `prod`
+2. Add GitHub variable: `VERSIONER_API_URL` (Settings → Variables tab)
+   - For dev: `https://api-development.versioner.io`
+   - For prod: `https://api.versioner.io`
+3. Run workflow: Actions → "Integration Tests" → Run workflow
 4. Review results in Actions tab and Versioner dashboard
 
 **Test Coverage:**
