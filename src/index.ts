@@ -47,6 +47,9 @@ async function run(): Promise<void> {
         invoke_id: githubMetadata.invoke_id,
         build_url: githubMetadata.build_url,
         built_by: githubMetadata.deployed_by,
+        built_by_email: githubMetadata.deployed_by_email,
+        built_by_name: githubMetadata.deployed_by_name,
+        built_at: new Date().toISOString(),
         extra_metadata: inputs.metadata,
       }
 
@@ -70,7 +73,7 @@ async function run(): Promise<void> {
       const payload: DeploymentEventPayload = {
         product_name: productName,
         version: inputs.version,
-        environment: inputs.environment,
+        environment_name: inputs.environment,
         status: inputs.status,
         scm_repository: githubMetadata.scm_repository,
         scm_sha: githubMetadata.scm_sha,
@@ -79,6 +82,9 @@ async function run(): Promise<void> {
         invoke_id: githubMetadata.invoke_id,
         build_url: githubMetadata.build_url,
         deployed_by: githubMetadata.deployed_by,
+        deployed_by_email: githubMetadata.deployed_by_email,
+        deployed_by_name: githubMetadata.deployed_by_name,
+        completed_at: new Date().toISOString(),
         extra_metadata: inputs.metadata,
       }
 

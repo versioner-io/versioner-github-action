@@ -34773,11 +34773,14 @@ const github = __importStar(__nccwpck_require__(3228));
  */
 function getGitHubMetadata() {
     const { context } = github;
-    const { repo, runId, runNumber, sha, actor, ref } = context;
+    const { repo, runId, runNumber, sha, actor, ref, payload } = context;
     // Construct build URL
     const buildUrl = `https://github.com/${repo.owner}/${repo.repo}/actions/runs/${runId}`;
     // Extract branch name from ref (e.g., refs/heads/main -> main)
     const scmBranch = ref.startsWith('refs/heads/') ? ref.replace('refs/heads/', '') : ref;
+    // Try to get email and name from commit author (available in push events)
+    const email = payload?.head_commit?.author?.email || payload?.commits?.[0]?.author?.email;
+    const name = payload?.head_commit?.author?.name || payload?.commits?.[0]?.author?.name;
     return {
         scm_repository: `${repo.owner}/${repo.repo}`,
         scm_sha: sha,
@@ -34787,6 +34790,8 @@ function getGitHubMetadata() {
         invoke_id: String(runId),
         build_url: buildUrl,
         deployed_by: actor,
+        deployed_by_email: email,
+        deployed_by_name: name,
     };
 }
 
@@ -34874,6 +34879,9 @@ async function run() {
                 invoke_id: githubMetadata.invoke_id,
                 build_url: githubMetadata.build_url,
                 built_by: githubMetadata.deployed_by,
+                built_by_email: githubMetadata.deployed_by_email,
+                built_by_name: githubMetadata.deployed_by_name,
+                built_at: new Date().toISOString(),
                 extra_metadata: inputs.metadata,
             };
             core.info('Sending version event to Versioner...');
@@ -34894,7 +34902,7 @@ async function run() {
             const payload = {
                 product_name: productName,
                 version: inputs.version,
-                environment: inputs.environment,
+                environment_name: inputs.environment,
                 status: inputs.status,
                 scm_repository: githubMetadata.scm_repository,
                 scm_sha: githubMetadata.scm_sha,
@@ -34903,6 +34911,9 @@ async function run() {
                 invoke_id: githubMetadata.invoke_id,
                 build_url: githubMetadata.build_url,
                 deployed_by: githubMetadata.deployed_by,
+                deployed_by_email: githubMetadata.deployed_by_email,
+                deployed_by_name: githubMetadata.deployed_by_name,
+                completed_at: new Date().toISOString(),
                 extra_metadata: inputs.metadata,
             };
             core.info('Sending deployment event to Versioner...');
