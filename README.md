@@ -237,13 +237,17 @@ The action automatically includes the following metadata from the GitHub context
 
 - `scm_repository` - Repository name (e.g., `owner/repo`)
 - `scm_sha` - Git commit SHA
+- `scm_branch` - Branch name (e.g., `main`)
 - `source_system` - Always set to `"github"`
 - `build_number` - GitHub Actions run number
 - `invoke_id` - GitHub Actions run ID
 - `build_url` - Link to the GitHub Actions run
-- `deployed_by` - GitHub username who triggered the workflow
+- `deployed_by` / `built_by` - GitHub username who triggered the workflow
+- `deployed_by_email` / `built_by_email` - Email from commit author (when available)
+- `deployed_by_name` / `built_by_name` - Full name from commit author (when available)
+- `completed_at` / `built_at` - Timestamp when the action runs
 
-This metadata is automatically merged with any custom metadata you provide via the `metadata` input.
+**Note:** Email and name fields are extracted from commit metadata and are only available for `push` events. For `workflow_dispatch` (manual triggers) or other event types, these fields will be `null`.
 
 ## 🏗️ How It Works
 
@@ -289,6 +293,47 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for development setup and guidelines.
 ## 📄 License
 
 MIT License - see [LICENSE](./LICENSE) for details.
+
+## 🔍 Troubleshooting
+
+### Email/Name Fields Are Null
+
+**Problem:** `deployed_by_email` and `deployed_by_name` are showing as `null` in the API.
+
+**Solution:** These fields are only populated for `push` events. If you're using `workflow_dispatch` (manual trigger) or other event types, commit metadata isn't available. To get email/name data:
+- Trigger the workflow via a push to a branch
+- Or use `pull_request` events which include commit data
+
+### Authentication Failed
+
+**Problem:** `Authentication failed: Invalid API key`
+
+**Solution:**
+1. Verify your API key is correct in Versioner account settings
+2. Ensure the secret is named exactly `VERSIONER_API_KEY` in GitHub
+3. Check that you're using `${{ secrets.VERSIONER_API_KEY }}` in the workflow
+
+### API Endpoint Not Found
+
+**Problem:** `API endpoint not found. Please check your api_url`
+
+**Solution:**
+1. If using default: No action needed, it should work automatically
+2. If using custom `api_url`: Verify the URL is correct (should be `https://api.versioner.io` or `https://api-development.versioner.io`)
+3. Ensure there's no trailing slash in the URL
+
+### Environment Required for Deployment Events
+
+**Problem:** Validation error about missing `environment_name`
+
+**Solution:** For `event_type: deployment`, you must provide the `environment` input:
+```yaml
+with:
+  event_type: deployment
+  environment: production  # Required!
+```
+
+For build events (`event_type: build`), environment is optional.
 
 ## 🆘 Support
 

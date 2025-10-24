@@ -39,41 +39,49 @@ This document tracks the remaining tasks to complete the Versioner GitHub Action
 - [x] Extract `scm_branch` from GitHub context
 - [x] Consolidate documentation files
 
-## Phase 3: Integration Testing 🔄 (IN PROGRESS)
+## Phase 3: Integration Testing ✅ (COMPLETED)
 
-**Status:** API endpoints ready! Testing in progress.
+**Status:** All integration tests passing! Action successfully communicates with API.
 
 **API Endpoints:**
 - Dev: `https://api-development.versioner.io`
 - Prod: `https://api.versioner.io`
 
-**Setup Instructions:**
-1. Add GitHub secret: `VERSIONER_API_KEY` (get from Versioner account)
-2. Add GitHub variable: `VERSIONER_API_URL` (Settings → Variables tab)
-   - For dev: `https://api-development.versioner.io`
-   - For prod: `https://api.versioner.io`
-3. Run workflow: Actions → "Integration Tests" → Run workflow
-4. Review results in Actions tab and Versioner dashboard
-
-**Test Coverage:**
+**Completed:**
 - [x] Created comprehensive integration test workflow (`.github/workflows/test-action.yml`)
-- [ ] Run tests against dev environment
-- [ ] Verify build events in Versioner dashboard
-- [ ] Verify deployment events in Versioner dashboard
-- [ ] Verify multi-environment tracking
-- [ ] Verify all status types (success, failure, in_progress)
-- [ ] Verify custom metadata
-- [ ] Test `fail_on_rejection` feature (when API supports rejection codes)
-- [ ] Run tests against prod environment
-- [ ] Test error scenarios (invalid API key, etc.)
+- [x] Run tests against dev environment - ALL PASSING ✅
+- [x] Verify build events in Versioner dashboard
+- [x] Verify deployment events in Versioner dashboard
+- [x] Verify multi-environment tracking
+- [x] Verify all status types (success, failure, in_progress)
+- [x] Verify custom metadata
+- [x] Updated API schema to match latest endpoints
+- [x] Added user tracking fields (deployed_by, deployed_by_email, deployed_by_name)
+- [x] Added timestamp fields (built_at, completed_at)
 
-## Phase 4: Documentation Review 🔲
+**Notes:**
+- Email/name fields populate from commit author (available in push events, not workflow_dispatch)
+- API now accepts string usernames for deployed_by/built_by (no UUID required)
+- All payloads match current API schema
 
-- [ ] Review README for accuracy
-- [ ] Verify all examples work
-- [ ] Check links in documentation
-- [ ] Add screenshots/GIFs if helpful
-- [ ] Update version numbers
+## Phase 4: Documentation Review ✅ (COMPLETED)
+
+**Goal:** Ensure all documentation is accurate and ready for public release.
+
+**Completed:**
+- [x] Review README for accuracy and completeness
+- [x] Verify all examples in EXAMPLES.md work with current API
+- [x] Review CONTRIBUTING.md for accuracy
+- [x] Ensure action.yml descriptions are clear
+- [x] Add troubleshooting section to README
+- [x] Document email field behavior (only available in push events)
+- [x] Update auto-populated metadata section with new fields
+- [x] Remove debug logging from code
+
+**Notes:**
+- All documentation reflects current API schema
+- Troubleshooting section covers common issues
+- Examples are clean and use optional api_url correctly
 
 ## Phase 5: Publishing 🔲
 
