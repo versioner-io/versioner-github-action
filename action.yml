@@ -47,8 +47,10 @@ outputs:
     description: 'UUID of the created deployment record (deployment events only)'
   event_id:
     description: 'UUID of the deployment event (deployment events only)'
+  build_id:
+    description: 'UUID of the created build record (build events only)'
   version_id:
-    description: 'UUID of the created version record (build events only)'
+    description: 'UUID of the version record (all events)'
   product_id:
     description: 'UUID of the product (all events)'
 

@@ -3,8 +3,8 @@ import * as core from '@actions/core'
 import {
   DeploymentEventPayload,
   DeploymentEventResponse,
-  VersionEventPayload,
-  VersionEventResponse,
+  BuildEventPayload,
+  BuildEventResponse,
 } from './types'
 
 /**
@@ -45,7 +45,7 @@ export async function sendDeploymentEvent(
         const errorData = data as { message?: string; error?: string } | undefined
         const message = errorData?.message || errorData?.error || 'Deployment rejected by Versioner'
         const rejectionError = `Deployment rejected: ${message}`
-        
+
         if (failOnRejection) {
           throw new Error(rejectionError)
         } else {
@@ -77,9 +77,7 @@ export async function sendDeploymentEvent(
         const detail = data && typeof data === 'object' ? JSON.stringify(data) : String(data)
         throw new Error(`Validation error: ${detail}`)
       } else if (status === 404) {
-        throw new Error(
-          `API endpoint not found. Please check your api_url: ${apiUrl}`
-        )
+        throw new Error(`API endpoint not found. Please check your api_url: ${apiUrl}`)
       } else if (axiosError.code === 'ECONNREFUSED') {
         throw new Error(
           `Connection refused: Unable to connect to ${apiUrl}. Please check the API URL.`
@@ -98,28 +96,26 @@ export async function sendDeploymentEvent(
     }
 
     // Non-axios errors
-    throw new Error(
-      `Unexpected error: ${error instanceof Error ? error.message : String(error)}`
-    )
+    throw new Error(`Unexpected error: ${error instanceof Error ? error.message : String(error)}`)
   }
 }
 
 /**
- * Send version event (build) to Versioner API
+ * Send build event to Versioner API
  */
-export async function sendVersionEvent(
+export async function sendBuildEvent(
   apiUrl: string,
   apiKey: string,
-  payload: VersionEventPayload,
+  payload: BuildEventPayload,
   failOnRejection = false
-): Promise<VersionEventResponse> {
-  const endpoint = `${apiUrl.replace(/\/$/, '')}/version-events/`
+): Promise<BuildEventResponse> {
+  const endpoint = `${apiUrl.replace(/\/$/, '')}/build-events/`
 
-  core.info(`Sending version event to ${endpoint}`)
+  core.info(`Sending build event to ${endpoint}`)
   core.debug(`Payload: ${JSON.stringify(payload, null, 2)}`)
 
   try {
-    const response = await axios.post<VersionEventResponse>(endpoint, payload, {
+    const response = await axios.post<BuildEventResponse>(endpoint, payload, {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`,
@@ -127,7 +123,7 @@ export async function sendVersionEvent(
       timeout: 30000, // 30 second timeout
     })
 
-    core.info(`✅ Version event created successfully`)
+    core.info(`✅ Build event created successfully`)
     core.debug(`Response: ${JSON.stringify(response.data, null, 2)}`)
 
     return response.data
@@ -142,7 +138,7 @@ export async function sendVersionEvent(
         const errorData = data as { message?: string; error?: string } | undefined
         const message = errorData?.message || errorData?.error || 'Build rejected by Versioner'
         const rejectionError = `Build rejected: ${message}`
-        
+
         if (failOnRejection) {
           throw new Error(rejectionError)
         } else {
@@ -150,10 +146,12 @@ export async function sendVersionEvent(
           core.info('Continuing workflow (fail_on_rejection is false)')
           // Return a placeholder response when not failing
           return {
+            id: '',
             version_id: '',
             product_id: '',
             version: payload.version,
-            created_at: new Date().toISOString(),
+            status: 'rejected',
+            started_at: new Date().toISOString(),
           }
         }
       }
@@ -165,15 +163,13 @@ export async function sendVersionEvent(
         )
       } else if (status === 403) {
         throw new Error(
-          `Authorization failed: API key does not have permission to create version events.`
+          `Authorization failed: API key does not have permission to create build events.`
         )
       } else if (status === 422) {
         const detail = data && typeof data === 'object' ? JSON.stringify(data) : String(data)
         throw new Error(`Validation error: ${detail}`)
       } else if (status === 404) {
-        throw new Error(
-          `API endpoint not found. Please check your api_url: ${apiUrl}`
-        )
+        throw new Error(`API endpoint not found. Please check your api_url: ${apiUrl}`)
       } else if (axiosError.code === 'ECONNREFUSED') {
         throw new Error(
           `Connection refused: Unable to connect to ${apiUrl}. Please check the API URL.`
@@ -186,14 +182,12 @@ export async function sendVersionEvent(
         const message = axiosError.message || 'Unknown error'
         const responseData = data ? `\nResponse: ${JSON.stringify(data)}` : ''
         throw new Error(
-          `Failed to send version event (HTTP ${status || 'unknown'}): ${message}${responseData}`
+          `Failed to send build event (HTTP ${status || 'unknown'}): ${message}${responseData}`
         )
       }
     }
 
     // Non-axios errors
-    throw new Error(
-      `Unexpected error: ${error instanceof Error ? error.message : String(error)}`
-    )
+    throw new Error(`Unexpected error: ${error instanceof Error ? error.message : String(error)}`)
   }
 }

@@ -34569,7 +34569,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.sendDeploymentEvent = sendDeploymentEvent;
-exports.sendVersionEvent = sendVersionEvent;
+exports.sendBuildEvent = sendBuildEvent;
 const axios_1 = __importDefault(__nccwpck_require__(7269));
 const core = __importStar(__nccwpck_require__(7484));
 /**
@@ -34650,11 +34650,11 @@ async function sendDeploymentEvent(apiUrl, apiKey, payload, failOnRejection = fa
     }
 }
 /**
- * Send version event (build) to Versioner API
+ * Send build event to Versioner API
  */
-async function sendVersionEvent(apiUrl, apiKey, payload, failOnRejection = false) {
-    const endpoint = `${apiUrl.replace(/\/$/, '')}/version-events/`;
-    core.info(`Sending version event to ${endpoint}`);
+async function sendBuildEvent(apiUrl, apiKey, payload, failOnRejection = false) {
+    const endpoint = `${apiUrl.replace(/\/$/, '')}/build-events/`;
+    core.info(`Sending build event to ${endpoint}`);
     core.debug(`Payload: ${JSON.stringify(payload, null, 2)}`);
     try {
         const response = await axios_1.default.post(endpoint, payload, {
@@ -34664,7 +34664,7 @@ async function sendVersionEvent(apiUrl, apiKey, payload, failOnRejection = false
             },
             timeout: 30000, // 30 second timeout
         });
-        core.info(`✅ Version event created successfully`);
+        core.info(`✅ Build event created successfully`);
         core.debug(`Response: ${JSON.stringify(response.data, null, 2)}`);
         return response.data;
     }
@@ -34686,10 +34686,12 @@ async function sendVersionEvent(apiUrl, apiKey, payload, failOnRejection = false
                     core.info('Continuing workflow (fail_on_rejection is false)');
                     // Return a placeholder response when not failing
                     return {
+                        id: '',
                         version_id: '',
                         product_id: '',
                         version: payload.version,
-                        created_at: new Date().toISOString(),
+                        status: 'rejected',
+                        started_at: new Date().toISOString(),
                     };
                 }
             }
@@ -34698,7 +34700,7 @@ async function sendVersionEvent(apiUrl, apiKey, payload, failOnRejection = false
                 throw new Error(`Authentication failed: Invalid API key. Please check your VERSIONER_API_KEY secret.`);
             }
             else if (status === 403) {
-                throw new Error(`Authorization failed: API key does not have permission to create version events.`);
+                throw new Error(`Authorization failed: API key does not have permission to create build events.`);
             }
             else if (status === 422) {
                 const detail = data && typeof data === 'object' ? JSON.stringify(data) : String(data);
@@ -34716,7 +34718,7 @@ async function sendVersionEvent(apiUrl, apiKey, payload, failOnRejection = false
             else {
                 const message = axiosError.message || 'Unknown error';
                 const responseData = data ? `\nResponse: ${JSON.stringify(data)}` : '';
-                throw new Error(`Failed to send version event (HTTP ${status || 'unknown'}): ${message}${responseData}`);
+                throw new Error(`Failed to send build event (HTTP ${status || 'unknown'}): ${message}${responseData}`);
             }
         }
         // Non-axios errors
@@ -34867,32 +34869,34 @@ async function run() {
         // Route to appropriate endpoint based on event type
         core.info('');
         if (inputs.eventType === 'build') {
-            // Build version event payload
+            // Build event payload
             const payload = {
                 product_name: productName,
                 version: inputs.version,
                 status: inputs.status,
+                build_number: githubMetadata.build_number,
+                build_url: githubMetadata.build_url,
                 scm_repository: githubMetadata.scm_repository,
                 scm_sha: githubMetadata.scm_sha,
                 scm_branch: githubMetadata.scm_branch,
                 source_system: githubMetadata.source_system,
-                build_number: githubMetadata.build_number,
                 invoke_id: githubMetadata.invoke_id,
-                build_url: githubMetadata.build_url,
                 built_by: githubMetadata.deployed_by,
                 built_by_email: githubMetadata.deployed_by_email,
                 built_by_name: githubMetadata.deployed_by_name,
-                built_at: new Date().toISOString(),
+                started_at: new Date().toISOString(),
                 extra_metadata: inputs.metadata,
             };
-            core.info('Sending version event to Versioner...');
-            const response = await (0, api_client_1.sendVersionEvent)(inputs.apiUrl, inputs.apiKey, payload, inputs.failOnRejection);
+            core.info('Sending build event to Versioner...');
+            const response = await (0, api_client_1.sendBuildEvent)(inputs.apiUrl, inputs.apiKey, payload, inputs.failOnRejection);
             // Set outputs
+            core.setOutput('build_id', response.id);
             core.setOutput('version_id', response.version_id);
             core.setOutput('product_id', response.product_id);
             // Success summary
             core.info('');
             core.info(`✅ Build tracked successfully!`);
+            core.info(`   Build ID: ${response.id}`);
             core.info(`   Version ID: ${response.version_id}`);
             core.info(`   Product ID: ${response.product_id}`);
             // Create GitHub annotation for visibility
@@ -34922,6 +34926,7 @@ async function run() {
             // Set outputs
             core.setOutput('deployment_id', response.deployment_id);
             core.setOutput('event_id', response.event_id);
+            core.setOutput('product_id', response.product_id);
             // Success summary
             core.info('');
             core.info(`✅ Deployment tracked successfully!`);

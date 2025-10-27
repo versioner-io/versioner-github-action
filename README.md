@@ -93,7 +93,8 @@ Check the **Actions** tab to see your deployment tracked!
 |--------|-------------|
 | `deployment_id` | UUID of the created deployment record (deployment events only) |
 | `event_id` | UUID of the deployment event (deployment events only) |
-| `version_id` | UUID of the created version record (build events only) |
+| `build_id` | UUID of the created build record (build events only) |
+| `version_id` | UUID of the version record (all events) |
 | `product_id` | UUID of the product (all events) |
 
 ## 🔧 Usage Examples
@@ -245,7 +246,7 @@ The action automatically includes the following metadata from the GitHub context
 - `deployed_by` / `built_by` - GitHub username who triggered the workflow
 - `deployed_by_email` / `built_by_email` - Email from commit author (when available)
 - `deployed_by_name` / `built_by_name` - Full name from commit author (when available)
-- `completed_at` / `built_at` - Timestamp when the action runs
+- `started_at` / `completed_at` - Timestamp when the action runs
 
 **Note:** Email and name fields are extracted from commit metadata and are only available for `push` events. For `workflow_dispatch` (manual triggers) or other event types, these fields will be `null`.
 
@@ -253,9 +254,9 @@ The action automatically includes the following metadata from the GitHub context
 
 1. **Validates inputs** - Ensures all required fields are provided
 2. **Enriches metadata** - Adds GitHub context automatically
-3. **Calls Versioner API** - POSTs to `/deployment-events/` endpoint
+3. **Calls Versioner API** - POSTs to `/build-events/` or `/deployment-events/` endpoint
 4. **Handles errors** - Provides clear error messages and GitHub annotations
-5. **Outputs IDs** - Returns deployment and event IDs for downstream steps
+5. **Outputs IDs** - Returns build/deployment and event IDs for downstream steps
 
 The action uses Versioner's natural key-based API, which means:
 - Products, versions, and environments are **created automatically** if they don't exist

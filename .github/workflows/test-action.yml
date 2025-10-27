@@ -31,6 +31,7 @@ jobs:
       - name: Verify outputs
         run: |
           echo "✅ Build event tracked"
+          echo "Build ID: ${{ steps.build.outputs.build_id }}"
           echo "Version ID: ${{ steps.build.outputs.version_id }}"
           echo "Product ID: ${{ steps.build.outputs.product_id }}"
 

@@ -1,8 +1,8 @@
 import * as core from '@actions/core'
 import { getInputs } from './inputs'
 import { getGitHubMetadata } from './github-context'
-import { sendDeploymentEvent, sendVersionEvent } from './api-client'
-import { DeploymentEventPayload, VersionEventPayload } from './types'
+import { sendDeploymentEvent, sendBuildEvent } from './api-client'
+import { DeploymentEventPayload, BuildEventPayload } from './types'
 
 /**
  * Main action entrypoint
@@ -35,35 +35,42 @@ async function run(): Promise<void> {
     // Route to appropriate endpoint based on event type
     core.info('')
     if (inputs.eventType === 'build') {
-      // Build version event payload
-      const payload: VersionEventPayload = {
+      // Build event payload
+      const payload: BuildEventPayload = {
         product_name: productName,
         version: inputs.version,
         status: inputs.status,
+        build_number: githubMetadata.build_number,
+        build_url: githubMetadata.build_url,
         scm_repository: githubMetadata.scm_repository,
         scm_sha: githubMetadata.scm_sha,
         scm_branch: githubMetadata.scm_branch,
         source_system: githubMetadata.source_system,
-        build_number: githubMetadata.build_number,
         invoke_id: githubMetadata.invoke_id,
-        build_url: githubMetadata.build_url,
         built_by: githubMetadata.deployed_by,
         built_by_email: githubMetadata.deployed_by_email,
         built_by_name: githubMetadata.deployed_by_name,
-        built_at: new Date().toISOString(),
+        started_at: new Date().toISOString(),
         extra_metadata: inputs.metadata,
       }
 
-      core.info('Sending version event to Versioner...')
-      const response = await sendVersionEvent(inputs.apiUrl, inputs.apiKey, payload, inputs.failOnRejection)
+      core.info('Sending build event to Versioner...')
+      const response = await sendBuildEvent(
+        inputs.apiUrl,
+        inputs.apiKey,
+        payload,
+        inputs.failOnRejection
+      )
 
       // Set outputs
+      core.setOutput('build_id', response.id)
       core.setOutput('version_id', response.version_id)
       core.setOutput('product_id', response.product_id)
 
       // Success summary
       core.info('')
       core.info(`✅ Build tracked successfully!`)
+      core.info(`   Build ID: ${response.id}`)
       core.info(`   Version ID: ${response.version_id}`)
       core.info(`   Product ID: ${response.product_id}`)
 
@@ -90,11 +97,17 @@ async function run(): Promise<void> {
       }
 
       core.info('Sending deployment event to Versioner...')
-      const response = await sendDeploymentEvent(inputs.apiUrl, inputs.apiKey, payload, inputs.failOnRejection)
+      const response = await sendDeploymentEvent(
+        inputs.apiUrl,
+        inputs.apiKey,
+        payload,
+        inputs.failOnRejection
+      )
 
       // Set outputs
       core.setOutput('deployment_id', response.deployment_id)
       core.setOutput('event_id', response.event_id)
+      core.setOutput('product_id', response.product_id)
 
       // Success summary
       core.info('')

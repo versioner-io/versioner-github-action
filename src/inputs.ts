@@ -31,16 +31,12 @@ export function getInputs(): ActionInputs {
   // Validate status
   const validStatuses = ['success', 'failure', 'in_progress']
   if (!validStatuses.includes(status)) {
-    throw new Error(
-      `Invalid status: '${status}'. Must be one of: ${validStatuses.join(', ')}`
-    )
+    throw new Error(`Invalid status: '${status}'. Must be one of: ${validStatuses.join(', ')}`)
   }
 
   // Validate environment is provided for deployment events
   if (eventType === 'deployment' && !environment) {
-    throw new Error(
-      `environment is required when event_type is 'deployment'`
-    )
+    throw new Error(`environment is required when event_type is 'deployment'`)
   }
 
   // Parse metadata JSON

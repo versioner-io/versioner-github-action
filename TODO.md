@@ -175,10 +175,17 @@ When ready to release v1.0.0:
 
 ### API Integration Notes
 
+**Breaking Changes Implemented (Oct 27, 2025):**
+- ✅ Migrated from `/version-events/` to `/build-events/` endpoint
+- ✅ Updated request schema with `build_number`, `error_message`, `error_code`
+- ✅ Updated response schema to include `build_id`, `started_at`, `completed_at`
+- ✅ Added `build_id` output to action
+- ✅ All tests passing with new schema
+
 **For Backend Team:**
 - API spec for rejection feature: `.notes/DEPLOYMENT_REJECTION_SPEC.md`
-- Need to implement `/version-events/` endpoint (for build events)
-- Need to implement rejection status codes: 409, 423, 428
+- Breaking changes spec: `.notes/build-events-breaking-changes.md`
+- Rejection status codes: 409, 423, 428 (already implemented)
 - Response format must include `error` and `message` fields
 
-**Action is ready** - all code complete, tests passing, just waiting on API support.
+**Action is ready** - all code updated for new API schema.

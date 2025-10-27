@@ -1,9 +1,9 @@
-import { DeploymentEventPayload, DeploymentEventResponse, VersionEventPayload, VersionEventResponse } from './types';
+import { DeploymentEventPayload, DeploymentEventResponse, BuildEventPayload, BuildEventResponse } from './types';
 /**
  * Send deployment event to Versioner API
  */
 export declare function sendDeploymentEvent(apiUrl: string, apiKey: string, payload: DeploymentEventPayload, failOnRejection?: boolean): Promise<DeploymentEventResponse>;
 /**
- * Send version event (build) to Versioner API
+ * Send build event to Versioner API
  */
-export declare function sendVersionEvent(apiUrl: string, apiKey: string, payload: VersionEventPayload, failOnRejection?: boolean): Promise<VersionEventResponse>;
+export declare function sendBuildEvent(apiUrl: string, apiKey: string, payload: BuildEventPayload, failOnRejection?: boolean): Promise<BuildEventResponse>;

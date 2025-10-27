@@ -18,21 +18,24 @@ export interface DeploymentEventPayload {
     completed_at?: string;
     extra_metadata?: Record<string, unknown>;
 }
-export interface VersionEventPayload {
+export interface BuildEventPayload {
     product_name: string;
     version: string;
     status?: string;
+    build_number?: string;
+    build_url?: string;
     scm_repository?: string;
     scm_sha?: string;
     scm_branch?: string;
     source_system?: string;
-    build_number?: string;
     invoke_id?: string;
-    build_url?: string;
     built_by?: string;
     built_by_email?: string;
     built_by_name?: string;
-    built_at?: string;
+    started_at?: string;
+    completed_at?: string;
+    error_message?: string;
+    error_code?: string;
     extra_metadata?: Record<string, unknown>;
 }
 export interface DeploymentEventResponse {
@@ -44,11 +47,16 @@ export interface DeploymentEventResponse {
     status: string;
     created_at: string;
 }
-export interface VersionEventResponse {
+export interface BuildEventResponse {
+    id: string;
     version_id: string;
     product_id: string;
     version: string;
-    created_at: string;
+    build_number?: string;
+    status: string;
+    build_url?: string;
+    started_at: string;
+    completed_at?: string;
 }
 export interface ActionInputs {
     apiUrl: string;
