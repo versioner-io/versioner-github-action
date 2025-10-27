@@ -26,7 +26,7 @@ TypeScript GitHub Action using @vercel/ncc for bundling
 
 ## Architecture
 - **Dual-mode operation**: `event_type: build` or `event_type: deployment`
-- **Build events** → POST to `/version-events/`
+- **Build events** → POST to `/build-events/`
 - **Deployment events** → POST to `/deployment-events/`
 - **Rejection handling**: HTTP 409/423/428 with `fail_on_rejection` input
 
