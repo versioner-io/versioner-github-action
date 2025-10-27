@@ -23,6 +23,7 @@ export interface DeploymentEventPayload {
 export interface VersionEventPayload {
   product_name: string
   version: string
+  status?: string
   scm_repository?: string
   scm_sha?: string
   scm_branch?: string

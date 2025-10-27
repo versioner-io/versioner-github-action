@@ -39,6 +39,7 @@ async function run(): Promise<void> {
       const payload: VersionEventPayload = {
         product_name: productName,
         version: inputs.version,
+        status: inputs.status,
         scm_repository: githubMetadata.scm_repository,
         scm_sha: githubMetadata.scm_sha,
         scm_branch: githubMetadata.scm_branch,
