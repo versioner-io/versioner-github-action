@@ -8,12 +8,13 @@ branding:
 
 inputs:
   api_url:
-    description: 'Versioner API endpoint URL (defaults to https://api.versioner.io)'
+    description: 'Versioner API endpoint URL (can also use VERSIONER_API_URL env var, defaults to https://api.versioner.io)'
     required: false
-    default: 'https://api.versioner.io'
+    default: ''
   api_key:
-    description: 'Versioner API key (store in GitHub Secrets)'
-    required: true
+    description: 'Versioner API key (can also use VERSIONER_API_KEY env var, store in GitHub Secrets)'
+    required: false
+    default: ''
   product_name:
     description: 'Name of the product/service (defaults to repository name if not provided)'
     required: false
@@ -40,7 +41,7 @@ inputs:
   fail_on_rejection:
     description: 'Fail the workflow if Versioner rejects the deployment (e.g., conflicts, no-deploy windows)'
     required: false
-    default: 'false'
+    default: 'true'
 
 outputs:
   deployment_id:

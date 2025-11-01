@@ -77,15 +77,17 @@ Check the **Actions** tab to see your deployment tracked!
 
 | Input | Required | Default | Description |
 |-------|----------|---------|-------------|
-| `api_url` | ❌ | `https://api.versioner.io` | Versioner API endpoint (override for testing or self-hosted) |
-| `api_key` | ✅ | - | Versioner API key (store in GitHub Secrets) |
+| `api_url` | ❌ | `https://api.versioner.io` | Versioner API endpoint (can also use `VERSIONER_API_URL` env var) |
+| `api_key` | ✅* | - | Versioner API key (can also use `VERSIONER_API_KEY` env var, store in GitHub Secrets) |
 | `product_name` | ❌ | repo name | Name of the product/service (defaults to repository name) |
 | `version` | ✅ | - | Version identifier (e.g., git SHA, semantic version, build number) |
 | `environment` | ❌ | - | Target environment (required for deployment events, optional for build events) |
 | `event_type` | ❌ | `deployment` | Event type: `build` or `deployment` |
 | `status` | ❌ | `success` | Event status (`success`, `failure`, `in_progress`) |
 | `metadata` | ❌ | `{}` | Additional JSON metadata to attach to the event |
-| `fail_on_rejection` | ❌ | `false` | Fail the workflow if Versioner rejects the deployment (e.g., conflicts, no-deploy windows) |
+| `fail_on_rejection` | ❌ | `true` | Fail the workflow if Versioner rejects the deployment (e.g., conflicts, no-deploy windows) |
+
+\* Required unless provided via `VERSIONER_API_KEY` environment variable
 
 ## 📤 Outputs
 
@@ -99,6 +101,53 @@ Check the **Actions** tab to see your deployment tracked!
 
 ## 🔧 Usage Examples
 
+### Using Environment Variables (Recommended for Multiple Events)
+
+Set `VERSIONER_API_KEY` once at the job or workflow level to avoid repeating it:
+
+```yaml
+env:
+  VERSIONER_API_KEY: ${{ secrets.VERSIONER_API_KEY }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build start
+        uses: versioner-io/versioner-github-action@v1
+        with:
+          version: ${{ github.sha }}
+          event_type: build
+          status: in_progress
+
+      - name: Build application
+        run: npm run build
+
+      - name: Build complete
+        uses: versioner-io/versioner-github-action@v1
+        with:
+          version: ${{ github.sha }}
+          event_type: build
+          status: success
+
+      - name: Deploy start
+        uses: versioner-io/versioner-github-action@v1
+        with:
+          version: ${{ github.sha }}
+          environment: production
+          status: in_progress
+
+      - name: Deploy application
+        run: ./deploy.sh production
+
+      - name: Deploy complete
+        uses: versioner-io/versioner-github-action@v1
+        with:
+          version: ${{ github.sha }}
+          environment: production
+          status: success
+```
+
 ### Track a Build (No Deployment)
 
 ```yaml
@@ -107,8 +156,7 @@ Check the **Actions** tab to see your deployment tracked!
   with:
     api_key: ${{ secrets.VERSIONER_API_KEY }}
     version: ${{ github.sha }}
-    event_type: build
-    # No environment needed - just tracking the build!
+    event_type: build   # No environment needed - just tracking the build!
 ```
 
 ### Track a Deployment
