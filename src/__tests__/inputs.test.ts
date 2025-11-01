@@ -6,9 +6,17 @@ jest.mock('@actions/core')
 
 describe('getInputs', () => {
   const mockGetInput = core.getInput as jest.MockedFunction<typeof core.getInput>
+  const originalEnv = process.env
 
   beforeEach(() => {
     jest.clearAllMocks()
+    process.env = { ...originalEnv }
+    delete process.env.VERSIONER_API_KEY
+    delete process.env.VERSIONER_API_URL
+  })
+
+  afterEach(() => {
+    process.env = originalEnv
   })
 
   it('should return valid inputs with defaults', () => {
@@ -36,7 +44,7 @@ describe('getInputs', () => {
       eventType: 'deployment',
       status: 'success',
       metadata: {},
-      failOnRejection: false,
+      failOnRejection: true,
     })
   })
 
@@ -123,5 +131,132 @@ describe('getInputs', () => {
     })
 
     expect(() => getInputs()).toThrow('Metadata must be a JSON object')
+  })
+
+  it('should throw error when api_key is not provided', () => {
+    mockGetInput.mockImplementation((name: string) => {
+      const inputs: Record<string, string> = {
+        api_url: 'https://api.versioner.io',
+        api_key: '',
+        product_name: 'test-product',
+        version: '1.0.0',
+        environment: 'production',
+      }
+      return inputs[name] || ''
+    })
+
+    expect(() => getInputs()).toThrow('api_key is required')
+  })
+
+  it('should use VERSIONER_API_KEY environment variable when input not provided', () => {
+    process.env.VERSIONER_API_KEY = 'sk_env_key'
+
+    mockGetInput.mockImplementation((name: string) => {
+      const inputs: Record<string, string> = {
+        api_url: 'https://api.versioner.io',
+        api_key: '',
+        product_name: 'test-product',
+        version: '1.0.0',
+        environment: 'production',
+      }
+      return inputs[name] || ''
+    })
+
+    const inputs = getInputs()
+
+    expect(inputs.apiKey).toBe('sk_env_key')
+  })
+
+  it('should use VERSIONER_API_URL environment variable when input not provided', () => {
+    process.env.VERSIONER_API_URL = 'https://custom.api.url'
+
+    mockGetInput.mockImplementation((name: string) => {
+      const inputs: Record<string, string> = {
+        api_url: '',
+        api_key: 'sk_test_key',
+        product_name: 'test-product',
+        version: '1.0.0',
+        environment: 'production',
+      }
+      return inputs[name] || ''
+    })
+
+    const inputs = getInputs()
+
+    expect(inputs.apiUrl).toBe('https://custom.api.url')
+  })
+
+  it('should prefer input over environment variable', () => {
+    process.env.VERSIONER_API_KEY = 'sk_env_key'
+    process.env.VERSIONER_API_URL = 'https://env.api.url'
+
+    mockGetInput.mockImplementation((name: string) => {
+      const inputs: Record<string, string> = {
+        api_url: 'https://input.api.url',
+        api_key: 'sk_input_key',
+        product_name: 'test-product',
+        version: '1.0.0',
+        environment: 'production',
+      }
+      return inputs[name] || ''
+    })
+
+    const inputs = getInputs()
+
+    expect(inputs.apiKey).toBe('sk_input_key')
+    expect(inputs.apiUrl).toBe('https://input.api.url')
+  })
+
+  it('should default to https://api.versioner.io when no api_url provided', () => {
+    mockGetInput.mockImplementation((name: string) => {
+      const inputs: Record<string, string> = {
+        api_url: '',
+        api_key: 'sk_test_key',
+        product_name: 'test-product',
+        version: '1.0.0',
+        environment: 'production',
+      }
+      return inputs[name] || ''
+    })
+
+    const inputs = getInputs()
+
+    expect(inputs.apiUrl).toBe('https://api.versioner.io')
+  })
+
+  it('should parse fail_on_rejection as true by default', () => {
+    mockGetInput.mockImplementation((name: string) => {
+      const inputs: Record<string, string> = {
+        api_url: 'https://api.versioner.io',
+        api_key: 'sk_test_key',
+        product_name: 'test-product',
+        version: '1.0.0',
+        environment: 'production',
+        fail_on_rejection: '',
+      }
+      return inputs[name] || ''
+    })
+
+    const inputs = getInputs()
+
+    expect(inputs.failOnRejection).toBe(true)
+  })
+
+  it('should parse fail_on_rejection as false when explicitly set', () => {
+    mockGetInput.mockImplementation((name: string) => {
+      const inputs: Record<string, string> = {
+        api_url: 'https://api.versioner.io',
+        api_key: 'sk_test_key',
+        product_name: 'test-product',
+        version: '1.0.0',
+        environment: 'production',
+        fail_on_rejection: 'false',
+      }
+      return inputs[name] || ''
+    })
+
+    const inputs = getInputs()
+
+    expect(inputs.failOnRejection).toBe(false)
   })
 })

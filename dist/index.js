@@ -34995,15 +34995,19 @@ const core = __importStar(__nccwpck_require__(7484));
  * Get and validate action inputs
  */
 function getInputs() {
-    const apiUrl = core.getInput('api_url', { required: true });
-    const apiKey = core.getInput('api_key', { required: true });
+    const apiUrl = core.getInput('api_url', { required: false }) || process.env.VERSIONER_API_URL || 'https://api.versioner.io';
+    const apiKey = core.getInput('api_key', { required: false }) || process.env.VERSIONER_API_KEY || '';
     const productName = core.getInput('product_name', { required: false }) || '';
     const version = core.getInput('version', { required: true });
     const environment = core.getInput('environment', { required: false }) || '';
     const eventType = core.getInput('event_type', { required: false }) || 'deployment';
     const status = core.getInput('status', { required: false }) || 'success';
     const metadataInput = core.getInput('metadata', { required: false }) || '{}';
-    const failOnRejectionInput = core.getInput('fail_on_rejection', { required: false }) || 'false';
+    const failOnRejectionInput = core.getInput('fail_on_rejection', { required: false }) || 'true';
+    // Validate API key is provided
+    if (!apiKey) {
+        throw new Error(`api_key is required (provide via input or VERSIONER_API_KEY environment variable)`);
+    }
     // Validate API URL format
     if (!apiUrl.startsWith('http://') && !apiUrl.startsWith('https://')) {
         throw new Error(`Invalid api_url: must start with http:// or https://`);
