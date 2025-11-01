@@ -34995,7 +34995,9 @@ const core = __importStar(__nccwpck_require__(7484));
  * Get and validate action inputs
  */
 function getInputs() {
-    const apiUrl = core.getInput('api_url', { required: false }) || process.env.VERSIONER_API_URL || 'https://api.versioner.io';
+    const apiUrl = core.getInput('api_url', { required: false }) ||
+        process.env.VERSIONER_API_URL ||
+        'https://api.versioner.io';
     const apiKey = core.getInput('api_key', { required: false }) || process.env.VERSIONER_API_KEY || '';
     const productName = core.getInput('product_name', { required: false }) || '';
     const version = core.getInput('version', { required: true });

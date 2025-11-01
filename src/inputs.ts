@@ -5,8 +5,12 @@ import { ActionInputs } from './types'
  * Get and validate action inputs
  */
 export function getInputs(): ActionInputs {
-  const apiUrl = core.getInput('api_url', { required: false }) || process.env.VERSIONER_API_URL || 'https://api.versioner.io'
-  const apiKey = core.getInput('api_key', { required: false }) || process.env.VERSIONER_API_KEY || ''
+  const apiUrl =
+    core.getInput('api_url', { required: false }) ||
+    process.env.VERSIONER_API_URL ||
+    'https://api.versioner.io'
+  const apiKey =
+    core.getInput('api_key', { required: false }) || process.env.VERSIONER_API_KEY || ''
   const productName = core.getInput('product_name', { required: false }) || ''
   const version = core.getInput('version', { required: true })
   const environment = core.getInput('environment', { required: false }) || ''
@@ -17,7 +21,9 @@ export function getInputs(): ActionInputs {
 
   // Validate API key is provided
   if (!apiKey) {
-    throw new Error(`api_key is required (provide via input or VERSIONER_API_KEY environment variable)`)
+    throw new Error(
+      `api_key is required (provide via input or VERSIONER_API_KEY environment variable)`
+    )
   }
 
   // Validate API URL format
