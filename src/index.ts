@@ -1,8 +1,92 @@
 import * as core from '@actions/core'
+import * as fs from 'fs'
 import { getInputs } from './inputs'
 import { getGitHubMetadata } from './github-context'
 import { sendDeploymentEvent, sendBuildEvent } from './api-client'
 import { DeploymentEventPayload, BuildEventPayload } from './types'
+
+/**
+ * Get the Versioner hostname from API URL
+ */
+function getVersionerHostname(apiUrl: string): string {
+  // Convert API URL to UI hostname
+  // https://api.versioner.io -> https://app.versioner.io
+  // https://development-api.versioner.io -> https://dev.versioner.io
+  const url = new URL(apiUrl)
+  if (url.hostname === 'api.versioner.io') {
+    return 'https://app.versioner.io'
+  } else if (url.hostname === 'development-api.versioner.io') {
+    return 'https://dev.versioner.io'
+  }
+  // For custom domains, try to infer UI hostname
+  return apiUrl.replace('api', 'app')
+}
+
+/**
+ * Get status emoji based on status string
+ */
+function getStatusEmoji(status: string): string {
+  switch (status) {
+    case 'success':
+      return '✅'
+    case 'failure':
+      return '❌'
+    case 'in_progress':
+      return '🔄'
+    default:
+      return '⚠️'
+  }
+}
+
+/**
+ * Write summary to GitHub Step Summary
+ */
+function writeSummary(
+  eventType: string,
+  version: string,
+  status: string,
+  scmSha: string,
+  apiUrl: string,
+  resourceId: string,
+  environment?: string
+): void {
+  const summaryPath = process.env.GITHUB_STEP_SUMMARY
+  if (!summaryPath) {
+    core.debug('GITHUB_STEP_SUMMARY not available, skipping summary')
+    return
+  }
+
+  const hostname = getVersionerHostname(apiUrl)
+  const statusEmoji = getStatusEmoji(status)
+
+  let summary = '## 🚀 Versioner Summary\n\n'
+
+  if (eventType === 'build') {
+    const viewUrl = `${hostname}/manage/versions?view=${resourceId}`
+    summary += `**Action:** Build\n\n`
+    summary += `**Status:** ${statusEmoji} ${status}\n\n`
+    summary += `**Version:** \`${version}\`\n\n`
+    summary += `**Git SHA:** \`${scmSha}\`\n\n`
+    summary += `[View in Versioner →](${viewUrl})\n`
+  } else {
+    const viewUrl = `${hostname}/deployments/${resourceId}`
+    summary += `**Action:** Deployment\n\n`
+    summary += `**Environment:** ${environment}\n\n`
+    summary += `**Status:** ${statusEmoji} ${status}\n\n`
+    summary += `**Version:** \`${version}\`\n\n`
+    summary += `**Git SHA:** \`${scmSha}\`\n\n`
+    summary += `[View in Versioner →](${viewUrl})\n`
+  }
+
+  try {
+    fs.appendFileSync(summaryPath, summary)
+    core.debug('Summary written to GITHUB_STEP_SUMMARY')
+  } catch (error) {
+    core.warning(
+      `Failed to write summary: ${error instanceof Error ? error.message : String(error)}`
+    )
+  }
+}
 
 /**
  * Main action entrypoint
@@ -76,6 +160,16 @@ async function run(): Promise<void> {
 
       // Create GitHub annotation for visibility
       core.notice(`Build tracked: ${productName}@${inputs.version} (${inputs.status})`)
+
+      // Write to GitHub Step Summary
+      writeSummary(
+        'build',
+        inputs.version,
+        inputs.status,
+        githubMetadata.scm_sha,
+        inputs.apiUrl,
+        response.version_id
+      )
     } else {
       // Build deployment event payload
       const payload: DeploymentEventPayload = {
@@ -118,6 +212,17 @@ async function run(): Promise<void> {
       // Create GitHub annotation for visibility
       core.notice(
         `Deployment tracked: ${productName}@${inputs.version} → ${inputs.environment} (${inputs.status})`
+      )
+
+      // Write to GitHub Step Summary
+      writeSummary(
+        'deployment',
+        inputs.version,
+        inputs.status,
+        githubMetadata.scm_sha,
+        inputs.apiUrl,
+        response.deployment_id,
+        inputs.environment
       )
     }
   } catch (error) {
