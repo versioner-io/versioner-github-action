@@ -34890,20 +34890,20 @@ function writeSummary(eventType, version, status, scmSha, apiUrl, resourceId, en
     let summary = '## 🚀 Versioner Summary\n\n';
     if (eventType === 'build') {
         const viewUrl = `${hostname}/manage/versions?view=${resourceId}`;
-        summary += `**Action:** Build\n\n`;
-        summary += `**Status:** ${statusEmoji} ${status}\n\n`;
-        summary += `**Version:** \`${version}\`\n\n`;
-        summary += `**Git SHA:** \`${scmSha}\`\n\n`;
-        summary += `[View in Versioner →](${viewUrl})\n`;
+        summary += `- **Action:** Build\n`;
+        summary += `- **Status:** ${statusEmoji} ${status}\n`;
+        summary += `- **Version:** \`${version}\`\n`;
+        summary += `- **Git SHA:** \`${scmSha}\`\n\n`;
+        summary += `<a href="${viewUrl}" target="_blank">View in Versioner →</a>\n`;
     }
     else {
         const viewUrl = `${hostname}/deployments/${resourceId}`;
-        summary += `**Action:** Deployment\n\n`;
-        summary += `**Environment:** ${environment}\n\n`;
-        summary += `**Status:** ${statusEmoji} ${status}\n\n`;
-        summary += `**Version:** \`${version}\`\n\n`;
-        summary += `**Git SHA:** \`${scmSha}\`\n\n`;
-        summary += `[View in Versioner →](${viewUrl})\n`;
+        summary += `- **Action:** Deployment\n`;
+        summary += `- **Environment:** ${environment}\n`;
+        summary += `- **Status:** ${statusEmoji} ${status}\n`;
+        summary += `- **Version:** \`${version}\`\n`;
+        summary += `- **Git SHA:** \`${scmSha}\`\n\n`;
+        summary += `<a href="${viewUrl}" target="_blank">View in Versioner →</a>\n`;
     }
     try {
         fs.appendFileSync(summaryPath, summary);
