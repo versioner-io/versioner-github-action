@@ -284,6 +284,7 @@ jobs:
 
 The action automatically includes the following metadata from the GitHub context:
 
+### Core Fields (Top-Level)
 - `scm_repository` - Repository name (e.g., `owner/repo`)
 - `scm_sha` - Git commit SHA
 - `scm_branch` - Branch name (e.g., `main`)
@@ -297,6 +298,34 @@ The action automatically includes the following metadata from the GitHub context
 - `started_at` / `completed_at` - Timestamp when the action runs
 
 **Note:** Email and name fields are extracted from commit metadata and are only available for `push` events. For `workflow_dispatch` (manual triggers) or other event types, these fields will be `null`.
+
+### Extra Metadata (Automatic)
+
+The action automatically captures additional GitHub Actions context in the `extra_metadata` field with a `vi_gh_` prefix (Versioner Internal - GitHub). These fields are merged with any user-provided metadata, with **user values taking precedence**.
+
+**Auto-detected fields:**
+- `vi_gh_workflow` - Workflow name (e.g., `"Deploy to Production"`)
+- `vi_gh_job` - Job name (e.g., `"deploy"`)
+- `vi_gh_run_attempt` - Retry attempt number (e.g., `"1"`)
+- `vi_gh_event_name` - Trigger event (e.g., `"push"`, `"pull_request"`, `"workflow_dispatch"`)
+- `vi_gh_ref` - Git reference (e.g., `"refs/heads/main"`)
+- `vi_gh_head_ref` - PR head branch (only for pull requests)
+- `vi_gh_base_ref` - PR base branch (only for pull requests)
+
+**Example resulting metadata:**
+```json
+{
+  "vi_gh_workflow": "Deploy to Production",
+  "vi_gh_job": "deploy",
+  "vi_gh_run_attempt": "1",
+  "vi_gh_event_name": "push",
+  "vi_gh_ref": "refs/heads/main",
+  "docker_image": "myapp:1.2.3",
+  "region": "us-east-1"
+}
+```
+
+**Note:** Only fields that exist in the environment are included. The `vi_` prefix is reserved for Versioner-managed metadata.
 
 ## 🏗️ How It Works
 

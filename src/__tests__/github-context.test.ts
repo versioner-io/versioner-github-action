@@ -93,9 +93,18 @@ describe('getAutoDetectedMetadata', () => {
   })
 
   it('should only include fields that exist (graceful handling)', () => {
+    // Clear all GitHub env vars first
+    delete process.env.GITHUB_WORKFLOW
+    delete process.env.GITHUB_JOB
+    delete process.env.GITHUB_RUN_ATTEMPT
+    delete process.env.GITHUB_EVENT_NAME
+    delete process.env.GITHUB_REF
+    delete process.env.GITHUB_HEAD_REF
+    delete process.env.GITHUB_BASE_REF
+
+    // Set only specific fields
     process.env.GITHUB_WORKFLOW = 'Build'
     process.env.GITHUB_JOB = 'compile'
-    // Other fields not set
 
     const metadata = getAutoDetectedMetadata()
 
@@ -123,6 +132,16 @@ describe('getAutoDetectedMetadata', () => {
   })
 
   it('should not include empty string values', () => {
+    // Clear all GitHub env vars first
+    delete process.env.GITHUB_WORKFLOW
+    delete process.env.GITHUB_JOB
+    delete process.env.GITHUB_RUN_ATTEMPT
+    delete process.env.GITHUB_EVENT_NAME
+    delete process.env.GITHUB_REF
+    delete process.env.GITHUB_HEAD_REF
+    delete process.env.GITHUB_BASE_REF
+
+    // Set specific fields with some empty
     process.env.GITHUB_WORKFLOW = 'Test'
     process.env.GITHUB_JOB = ''
     process.env.GITHUB_RUN_ATTEMPT = '1'
