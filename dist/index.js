@@ -34769,6 +34769,8 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getGitHubMetadata = getGitHubMetadata;
+exports.getAutoDetectedMetadata = getAutoDetectedMetadata;
+exports.mergeMetadata = mergeMetadata;
 const github = __importStar(__nccwpck_require__(3228));
 /**
  * Extract GitHub context metadata for events
@@ -34794,6 +34796,44 @@ function getGitHubMetadata() {
         deployed_by: actor,
         deployed_by_email: email,
         deployed_by_name: name,
+    };
+}
+/**
+ * Extract auto-detected GitHub metadata with vi_gh_ prefix
+ * Following ADR-013: Auto-Detected Extra Metadata
+ */
+function getAutoDetectedMetadata() {
+    const metadata = {};
+    // Helper to add field only if value exists
+    const addIfPresent = (key, value) => {
+        if (value && value !== '') {
+            metadata[key] = value;
+        }
+    };
+    // GitHub Actions environment variables
+    addIfPresent('vi_gh_workflow', process.env.GITHUB_WORKFLOW);
+    addIfPresent('vi_gh_job', process.env.GITHUB_JOB);
+    addIfPresent('vi_gh_run_attempt', process.env.GITHUB_RUN_ATTEMPT);
+    addIfPresent('vi_gh_event_name', process.env.GITHUB_EVENT_NAME);
+    addIfPresent('vi_gh_ref', process.env.GITHUB_REF);
+    addIfPresent('vi_gh_head_ref', process.env.GITHUB_HEAD_REF);
+    addIfPresent('vi_gh_base_ref', process.env.GITHUB_BASE_REF);
+    return metadata;
+}
+/**
+ * Merge auto-detected metadata with user-provided metadata
+ * User values take precedence over auto-detected values
+ * Following ADR-013: Auto-Detected Extra Metadata
+ */
+function mergeMetadata(autoDetected, userProvided) {
+    // If both empty, return empty object
+    if (Object.keys(autoDetected).length === 0 && Object.keys(userProvided).length === 0) {
+        return {};
+    }
+    // Merge with user values taking precedence
+    return {
+        ...autoDetected,
+        ...userProvided,
     };
 }
 
@@ -34924,6 +34964,10 @@ async function run() {
         const inputs = (0, inputs_1.getInputs)();
         // Get GitHub context metadata
         const githubMetadata = (0, github_context_1.getGitHubMetadata)();
+        // Get auto-detected metadata and merge with user-provided metadata
+        // User values take precedence (ADR-013)
+        const autoDetectedMetadata = (0, github_context_1.getAutoDetectedMetadata)();
+        const mergedMetadata = (0, github_context_1.mergeMetadata)(autoDetectedMetadata, inputs.metadata);
         // Default product_name to repository name if not provided
         const productName = inputs.productName || githubMetadata.scm_repository.split('/')[1];
         core.info(`Event Type: ${inputs.eventType}`);
@@ -34955,7 +34999,7 @@ async function run() {
                 built_by_email: githubMetadata.deployed_by_email,
                 built_by_name: githubMetadata.deployed_by_name,
                 started_at: new Date().toISOString(),
-                extra_metadata: inputs.metadata,
+                extra_metadata: mergedMetadata,
             };
             core.info('Sending build event to Versioner...');
             const response = await (0, api_client_1.sendBuildEvent)(inputs.apiUrl, inputs.apiKey, payload, inputs.failOnRejection);
@@ -34991,7 +35035,7 @@ async function run() {
                 deployed_by_email: githubMetadata.deployed_by_email,
                 deployed_by_name: githubMetadata.deployed_by_name,
                 completed_at: new Date().toISOString(),
-                extra_metadata: inputs.metadata,
+                extra_metadata: mergedMetadata,
             };
             core.info('Sending deployment event to Versioner...');
             const response = await (0, api_client_1.sendDeploymentEvent)(inputs.apiUrl, inputs.apiKey, payload, inputs.failOnRejection);

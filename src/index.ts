@@ -1,7 +1,7 @@
 import * as core from '@actions/core'
 import * as fs from 'fs'
 import { getInputs } from './inputs'
-import { getGitHubMetadata } from './github-context'
+import { getGitHubMetadata, getAutoDetectedMetadata, mergeMetadata } from './github-context'
 import { sendDeploymentEvent, sendBuildEvent } from './api-client'
 import { DeploymentEventPayload, BuildEventPayload } from './types'
 
@@ -102,6 +102,11 @@ async function run(): Promise<void> {
     // Get GitHub context metadata
     const githubMetadata = getGitHubMetadata()
 
+    // Get auto-detected metadata and merge with user-provided metadata
+    // User values take precedence (ADR-013)
+    const autoDetectedMetadata = getAutoDetectedMetadata()
+    const mergedMetadata = mergeMetadata(autoDetectedMetadata, inputs.metadata)
+
     // Default product_name to repository name if not provided
     const productName = inputs.productName || githubMetadata.scm_repository.split('/')[1]
 
@@ -135,7 +140,7 @@ async function run(): Promise<void> {
         built_by_email: githubMetadata.deployed_by_email,
         built_by_name: githubMetadata.deployed_by_name,
         started_at: new Date().toISOString(),
-        extra_metadata: inputs.metadata,
+        extra_metadata: mergedMetadata,
       }
 
       core.info('Sending build event to Versioner...')
@@ -187,7 +192,7 @@ async function run(): Promise<void> {
         deployed_by_email: githubMetadata.deployed_by_email,
         deployed_by_name: githubMetadata.deployed_by_name,
         completed_at: new Date().toISOString(),
-        extra_metadata: inputs.metadata,
+        extra_metadata: mergedMetadata,
       }
 
       core.info('Sending deployment event to Versioner...')
