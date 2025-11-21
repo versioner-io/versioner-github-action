@@ -18,6 +18,8 @@ export function getInputs(): ActionInputs {
   const status = core.getInput('status', { required: false }) || 'success'
   const metadataInput = core.getInput('metadata', { required: false }) || '{}'
   const failOnRejectionInput = core.getInput('fail_on_rejection', { required: false }) || 'true'
+  const skipPreflightChecksInput =
+    core.getInput('skip_preflight_checks', { required: false }) || 'false'
 
   // Validate API key is provided
   if (!apiKey) {
@@ -66,6 +68,9 @@ export function getInputs(): ActionInputs {
   // Parse fail_on_rejection boolean
   const failOnRejection = failOnRejectionInput.toLowerCase() === 'true'
 
+  // Parse skip_preflight_checks boolean
+  const skipPreflightChecks = skipPreflightChecksInput.toLowerCase() === 'true'
+
   return {
     apiUrl,
     apiKey,
@@ -76,5 +81,6 @@ export function getInputs(): ActionInputs {
     status,
     metadata,
     failOnRejection,
+    skipPreflightChecks,
   }
 }

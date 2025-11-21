@@ -45,6 +45,7 @@ describe('getInputs', () => {
       status: 'success',
       metadata: {},
       failOnRejection: true,
+      skipPreflightChecks: false,
     })
   })
 
@@ -258,5 +259,41 @@ describe('getInputs', () => {
     const inputs = getInputs()
 
     expect(inputs.failOnRejection).toBe(false)
+  })
+
+  it('should parse skip_preflight_checks as false by default', () => {
+    mockGetInput.mockImplementation((name: string) => {
+      const inputs: Record<string, string> = {
+        api_url: 'https://api.versioner.io',
+        api_key: 'sk_test_key',
+        product_name: 'test-product',
+        version: '1.0.0',
+        environment: 'production',
+        skip_preflight_checks: '',
+      }
+      return inputs[name] || ''
+    })
+
+    const inputs = getInputs()
+
+    expect(inputs.skipPreflightChecks).toBe(false)
+  })
+
+  it('should parse skip_preflight_checks as true when explicitly set', () => {
+    mockGetInput.mockImplementation((name: string) => {
+      const inputs: Record<string, string> = {
+        api_url: 'https://api.versioner.io',
+        api_key: 'sk_test_key',
+        product_name: 'test-product',
+        version: '1.0.0',
+        environment: 'production',
+        skip_preflight_checks: 'true',
+      }
+      return inputs[name] || ''
+    })
+
+    const inputs = getInputs()
+
+    expect(inputs.skipPreflightChecks).toBe(true)
   })
 })
