@@ -34598,9 +34598,64 @@ async function sendDeploymentEvent(apiUrl, apiKey, payload, failOnRejection = fa
             const data = axiosError.response?.data;
             // Handle rejection status codes (409, 423, 428)
             if (status === 409 || status === 423 || status === 428) {
-                const errorData = data;
-                const message = errorData?.message || errorData?.error || 'Deployment rejected by Versioner';
-                const rejectionError = `Deployment rejected: ${message}`;
+                const errorResponse = data;
+                const detail = errorResponse?.detail;
+                const errorCode = detail?.code || 'UNKNOWN';
+                const message = detail?.message || 'Deployment rejected by Versioner';
+                const ruleName = detail?.details?.rule_name || 'Unknown Rule';
+                let rejectionError = '';
+                // Format error based on status code
+                if (status === 409) {
+                    // DEPLOYMENT_IN_PROGRESS
+                    rejectionError = `⚠️ Deployment Conflict\n\n`;
+                    rejectionError += `${message}\n`;
+                    rejectionError += `Another deployment is in progress. Please wait and retry.`;
+                }
+                else if (status === 423) {
+                    // NO_DEPLOY_WINDOW
+                    rejectionError = `🔒 Deployment Blocked by Schedule\n\n`;
+                    rejectionError += `Rule: ${ruleName}\n`;
+                    rejectionError += `${message}\n`;
+                    if (detail?.retry_after) {
+                        rejectionError += `\nRetry after: ${detail.retry_after}`;
+                    }
+                    rejectionError += `\n\nTo skip checks (emergency only), add to your workflow:\n`;
+                    rejectionError += `  skip-preflight-checks: true`;
+                }
+                else if (status === 428) {
+                    // Precondition failures (FLOW_VIOLATION, INSUFFICIENT_SOAK_TIME, etc.)
+                    rejectionError = `❌ Deployment Precondition Failed\n\n`;
+                    rejectionError += `Error: ${errorCode}\n`;
+                    rejectionError += `Rule: ${ruleName}\n`;
+                    rejectionError += `${message}\n`;
+                    if (detail?.retry_after) {
+                        rejectionError += `\nRetry after: ${detail.retry_after}`;
+                    }
+                    // Add specific guidance based on error code
+                    if (errorCode === 'FLOW_VIOLATION') {
+                        rejectionError += `\n\nDeploy to required environments first, then retry.`;
+                    }
+                    else if (errorCode === 'INSUFFICIENT_SOAK_TIME') {
+                        rejectionError += `\n\nWait for soak time to complete, then retry.`;
+                        rejectionError += `\n\nTo skip checks (emergency only), add to your workflow:\n`;
+                        rejectionError += `  skip-preflight-checks: true`;
+                    }
+                    else if (errorCode === 'QUALITY_APPROVAL_REQUIRED' ||
+                        errorCode === 'APPROVAL_REQUIRED') {
+                        rejectionError += `\n\nApproval required before deployment can proceed.`;
+                        rejectionError += `\nObtain approval via Versioner UI, then retry.`;
+                    }
+                    else {
+                        // Generic handler for unknown/future error codes
+                        rejectionError += `\n\nResolve the issue described above, then retry.`;
+                        rejectionError += `\n\nTo skip checks (emergency only), add to your workflow:\n`;
+                        rejectionError += `  skip-preflight-checks: true`;
+                    }
+                    // Always include full details for debugging (all error codes)
+                    if (detail?.details) {
+                        rejectionError += `\n\nDetails: ${JSON.stringify(detail.details, null, 2)}`;
+                    }
+                }
                 if (failOnRejection) {
                     throw new Error(rejectionError);
                 }
@@ -35025,6 +35080,7 @@ async function run() {
                 version: inputs.version,
                 environment_name: inputs.environment,
                 status: inputs.status,
+                skip_preflight_checks: inputs.skipPreflightChecks,
                 scm_repository: githubMetadata.scm_repository,
                 scm_sha: githubMetadata.scm_sha,
                 source_system: githubMetadata.source_system,
@@ -35124,6 +35180,7 @@ function getInputs() {
     const status = core.getInput('status', { required: false }) || 'success';
     const metadataInput = core.getInput('metadata', { required: false }) || '{}';
     const failOnRejectionInput = core.getInput('fail_on_rejection', { required: false }) || 'true';
+    const skipPreflightChecksInput = core.getInput('skip_preflight_checks', { required: false }) || 'false';
     // Validate API key is provided
     if (!apiKey) {
         throw new Error(`api_key is required (provide via input or VERSIONER_API_KEY environment variable)`);
@@ -35159,6 +35216,8 @@ function getInputs() {
     }
     // Parse fail_on_rejection boolean
     const failOnRejection = failOnRejectionInput.toLowerCase() === 'true';
+    // Parse skip_preflight_checks boolean
+    const skipPreflightChecks = skipPreflightChecksInput.toLowerCase() === 'true';
     return {
         apiUrl,
         apiKey,
@@ -35169,6 +35228,7 @@ function getInputs() {
         status,
         metadata,
         failOnRejection,
+        skipPreflightChecks,
     };
 }
 

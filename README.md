@@ -86,6 +86,7 @@ Check the **Actions** tab to see your deployment tracked!
 | `status` | ❌ | `success` | Event status (`success`, `failure`, `in_progress`) |
 | `metadata` | ❌ | `{}` | Additional JSON metadata to attach to the event |
 | `fail_on_rejection` | ❌ | `true` | Fail the workflow if Versioner rejects the deployment (e.g., conflicts, no-deploy windows) |
+| `skip_preflight_checks` | ❌ | `false` | Skip preflight checks (use for emergency deployments only) |
 
 \* Required unless provided via `VERSIONER_API_KEY` environment variable
 
@@ -98,6 +99,93 @@ Check the **Actions** tab to see your deployment tracked!
 | `build_id` | UUID of the created build record (build events only) |
 | `version_id` | UUID of the version record (all events) |
 | `product_id` | UUID of the product (all events) |
+
+## 🛡️ Preflight Checks
+
+When starting a deployment (`status: started`), Versioner automatically runs preflight checks to validate:
+- **No concurrent deployments** - Prevents multiple simultaneous deployments to the same environment
+- **No active no-deploy windows** - Respects scheduled freeze periods (e.g., Friday afternoons, holidays)
+- **Required approvals obtained** - Ensures proper authorization before deployment
+- **Flow/soak time requirements met** - Validates promotion path and minimum soak time in lower environments
+
+If checks fail, the action will fail and the deployment will **NOT** be created.
+
+### Default Behavior
+
+Preflight checks run automatically by default:
+
+```yaml
+- name: Deploy to production
+  uses: versioner-io/versioner-github-action@v1
+  with:
+    api_key: ${{ secrets.VERSIONER_API_KEY }}
+    product_name: my-service
+    version: ${{ github.sha }}
+    environment: production
+    status: started  # Checks run automatically
+```
+
+### Skip Checks (Emergency Only)
+
+For emergency hotfixes, you can skip preflight checks:
+
+```yaml
+- name: Emergency hotfix deployment
+  uses: versioner-io/versioner-github-action@v1
+  with:
+    api_key: ${{ secrets.VERSIONER_API_KEY }}
+    product_name: my-service
+    version: ${{ github.sha }}
+    environment: production
+    status: started
+    skip_preflight_checks: true  # ⚠️ Use sparingly!
+```
+
+**⚠️ Warning:** Skipping checks bypasses all deployment policies. Use only for genuine emergencies.
+
+### Error Messages
+
+When preflight checks fail, you'll see detailed error messages:
+
+**Schedule Block (423):**
+```
+🔒 Deployment Blocked by Schedule
+
+Rule: Production Freeze - Friday Afternoons
+Deployment blocked by no-deploy window
+
+Retry after: 2025-11-21T18:00:00-08:00
+
+To skip checks (emergency only), add to your workflow:
+  skip-preflight-checks: true
+```
+
+**Flow Violation (428):**
+```
+❌ Deployment Precondition Failed
+
+Error: FLOW_VIOLATION
+Rule: Staging Required Before Production
+Version must be deployed to staging first
+
+Deploy to required environments first, then retry.
+```
+
+**Insufficient Soak Time (428):**
+```
+❌ Deployment Precondition Failed
+
+Error: INSUFFICIENT_SOAK_TIME
+Rule: 24hr Staging Soak
+Version must soak in staging for at least 24 hours
+
+Retry after: 2025-11-22T10:00:00Z
+
+Wait for soak time to complete, then retry.
+
+To skip checks (emergency only), add to your workflow:
+  skip-preflight-checks: true
+```
 
 ## 🔧 Usage Examples
 
