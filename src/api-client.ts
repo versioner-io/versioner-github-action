@@ -1,11 +1,102 @@
 import axios, { AxiosError } from 'axios'
 import * as core from '@actions/core'
+import * as fs from 'fs'
 import {
   DeploymentEventPayload,
   DeploymentEventResponse,
   BuildEventPayload,
   BuildEventResponse,
 } from './types'
+
+/**
+ * Write error summary to GitHub Step Summary
+ */
+function writeErrorSummary(
+  errorCode: string,
+  message: string,
+  ruleName: string,
+  status: number,
+  retryAfter?: string,
+  details?: Record<string, unknown>
+): void {
+  const summaryPath = process.env.GITHUB_STEP_SUMMARY
+  if (!summaryPath) {
+    core.debug('GITHUB_STEP_SUMMARY not available, skipping error summary')
+    return
+  }
+
+  let summary = '## ❌ Versioner Deployment Rejected\n\n'
+
+  // Add status-specific emoji and title
+  if (status === 409) {
+    summary += '### ⚠️ Deployment Conflict\n\n'
+  } else if (status === 423) {
+    summary += '### 🔒 Deployment Blocked by Schedule\n\n'
+  } else if (status === 428) {
+    summary += '### ❌ Deployment Precondition Failed\n\n'
+  }
+
+  // Add key information
+  summary += `- **Error Code:** \`${errorCode}\`\n`
+  summary += `- **Rule:** ${ruleName}\n`
+  summary += `- **Message:** ${message}\n`
+
+  if (retryAfter) {
+    summary += `- **Retry After:** \`${retryAfter}\`\n`
+  }
+
+  summary += '\n'
+
+  // Add specific guidance based on error code
+  if (status === 409) {
+    summary += '**Action Required:**\n'
+    summary += '- Wait for the current deployment to complete\n'
+    summary += '- Retry this deployment\n'
+  } else if (status === 423) {
+    summary += '**Action Required:**\n'
+    if (retryAfter) {
+      summary += `- Wait until \`${retryAfter}\`\n`
+      summary += '- Retry automatically after the no-deploy window\n'
+    }
+    summary += '- Or use \`skip-preflight-checks: true\` for emergencies\n'
+  } else if (status === 428) {
+    summary += '**Action Required:**\n'
+    if (errorCode === 'FLOW_VIOLATION') {
+      summary += '- Deploy to required environments first\n'
+      summary += '- Then retry this deployment\n'
+    } else if (errorCode === 'INSUFFICIENT_SOAK_TIME') {
+      summary += '- Wait for the soak time requirement to be met\n'
+      if (retryAfter) {
+        summary += `- Can deploy at: \`${retryAfter}\`\n`
+      }
+      summary += '- Or use \`skip-preflight-checks: true\` for emergencies\n'
+    } else if (errorCode === 'QUALITY_APPROVAL_REQUIRED' || errorCode === 'APPROVAL_REQUIRED') {
+      summary += '- Obtain required approval via Versioner UI\n'
+      summary += '- Then retry this deployment\n'
+    } else {
+      summary += '- Resolve the issue described above\n'
+      summary += '- Then retry this deployment\n'
+      summary += '- Or use \`skip-preflight-checks: true\` for emergencies\n'
+    }
+  }
+
+  // Add details section if available
+  if (details && Object.keys(details).length > 0) {
+    summary += '\n**Details:**\n'
+    summary += '```json\n'
+    summary += JSON.stringify(details, null, 2)
+    summary += '\n```\n'
+  }
+
+  try {
+    fs.appendFileSync(summaryPath, summary)
+    core.debug('Error summary written to GITHUB_STEP_SUMMARY')
+  } catch (error) {
+    core.warning(
+      `Failed to write error summary: ${error instanceof Error ? error.message : String(error)}`
+    )
+  }
+}
 
 /**
  * Send deployment event to Versioner API
@@ -114,6 +205,16 @@ export async function sendDeploymentEvent(
             rejectionError += `\n\nDetails: ${JSON.stringify(detail.details, null, 2)}`
           }
         }
+
+        // Write error summary to GitHub Step Summary
+        writeErrorSummary(
+          errorCode,
+          message,
+          ruleName,
+          status,
+          detail?.retry_after,
+          detail?.details
+        )
 
         if (failOnRejection) {
           throw new Error(rejectionError)
