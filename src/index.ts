@@ -3,7 +3,7 @@ import * as fs from 'fs'
 import { getInputs } from './inputs'
 import { getGitHubMetadata, getAutoDetectedMetadata, mergeMetadata } from './github-context'
 import { sendDeploymentEvent, sendBuildEvent } from './api-client'
-import { DeploymentEventPayload, BuildEventPayload } from './types'
+import { DeploymentEventPayload, BuildEventPayload, ActionInputs } from './types'
 
 /**
  * Get the Versioner hostname from API URL
@@ -92,12 +92,14 @@ function writeSummary(
  * Main action entrypoint
  */
 async function run(): Promise<void> {
+  let inputs: ActionInputs | undefined
+
   try {
     // Get and validate inputs
     core.info('📦 Versioner Deployment Tracker')
     core.info('================================')
 
-    const inputs = getInputs()
+    inputs = getInputs()
 
     // Get GitHub context metadata
     const githubMetadata = getGitHubMetadata()
@@ -238,6 +240,33 @@ async function run(): Promise<void> {
 
     // Add error annotation
     core.error(errorMessage)
+
+    // Write error summary to GitHub Step Summary
+    const summaryPath = process.env.GITHUB_STEP_SUMMARY
+    if (summaryPath) {
+      try {
+        let errorSummary = '## ❌ Versioner Action Failed\n\n'
+        errorSummary += `**Error:** ${errorMessage}\n\n`
+
+        // Add context if inputs were successfully parsed
+        if (inputs) {
+          errorSummary += '**Context:**\n'
+          errorSummary += `- **Event Type:** ${inputs.eventType}\n`
+          if (inputs.productName) {
+            errorSummary += `- **Product:** ${inputs.productName}\n`
+          }
+          errorSummary += `- **Version:** ${inputs.version}\n`
+          if (inputs.environment) {
+            errorSummary += `- **Environment:** ${inputs.environment}\n`
+          }
+          errorSummary += `- **Status:** ${inputs.status}\n`
+        }
+
+        fs.appendFileSync(summaryPath, errorSummary)
+      } catch (summaryError) {
+        core.warning(`Failed to write error summary: ${summaryError}`)
+      }
+    }
   }
 }
 

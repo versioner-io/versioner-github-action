@@ -41,11 +41,10 @@ export function getInputs(): ActionInputs {
     )
   }
 
-  // Validate status
-  const validStatuses = ['success', 'failure', 'in_progress']
-  if (!validStatuses.includes(status)) {
-    throw new Error(`Invalid status: '${status}'. Must be one of: ${validStatuses.join(', ')}`)
-  }
+  // Note: Status validation is handled by the API, which accepts many values:
+  // pending, queued, scheduled, started, in_progress, init, deploying/building,
+  // success, completed, complete, finished, deployed/built,
+  // failed, fail, failure, error, aborted, abort, cancelled, cancel, skipped
 
   // Validate environment is provided for deployment events
   if (eventType === 'deployment' && !environment) {

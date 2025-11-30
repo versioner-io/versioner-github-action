@@ -86,22 +86,6 @@ describe('getInputs', () => {
     expect(() => getInputs()).toThrow('Invalid api_url')
   })
 
-  it('should throw error for invalid status', () => {
-    mockGetInput.mockImplementation((name: string) => {
-      const inputs: Record<string, string> = {
-        api_url: 'https://api.versioner.io',
-        api_key: 'sk_test_key',
-        product_name: 'test-product',
-        version: '1.0.0',
-        environment: 'production',
-        status: 'invalid-status',
-      }
-      return inputs[name] || ''
-    })
-
-    expect(() => getInputs()).toThrow('Invalid status')
-  })
-
   it('should throw error for invalid metadata JSON', () => {
     mockGetInput.mockImplementation((name: string) => {
       const inputs: Record<string, string> = {

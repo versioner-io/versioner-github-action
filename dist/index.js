@@ -35095,11 +35095,12 @@ function writeSummary(eventType, version, status, scmSha, apiUrl, resourceId, en
  * Main action entrypoint
  */
 async function run() {
+    let inputs;
     try {
         // Get and validate inputs
         core.info('📦 Versioner Deployment Tracker');
         core.info('================================');
-        const inputs = (0, inputs_1.getInputs)();
+        inputs = (0, inputs_1.getInputs)();
         // Get GitHub context metadata
         const githubMetadata = (0, github_context_1.getGitHubMetadata)();
         // Get auto-detected metadata and merge with user-provided metadata
@@ -35199,6 +35200,31 @@ async function run() {
         core.setFailed(`❌ Failed to track deployment: ${errorMessage}`);
         // Add error annotation
         core.error(errorMessage);
+        // Write error summary to GitHub Step Summary
+        const summaryPath = process.env.GITHUB_STEP_SUMMARY;
+        if (summaryPath) {
+            try {
+                let errorSummary = '## ❌ Versioner Action Failed\n\n';
+                errorSummary += `**Error:** ${errorMessage}\n\n`;
+                // Add context if inputs were successfully parsed
+                if (inputs) {
+                    errorSummary += '**Context:**\n';
+                    errorSummary += `- **Event Type:** ${inputs.eventType}\n`;
+                    if (inputs.productName) {
+                        errorSummary += `- **Product:** ${inputs.productName}\n`;
+                    }
+                    errorSummary += `- **Version:** ${inputs.version}\n`;
+                    if (inputs.environment) {
+                        errorSummary += `- **Environment:** ${inputs.environment}\n`;
+                    }
+                    errorSummary += `- **Status:** ${inputs.status}\n`;
+                }
+                fs.appendFileSync(summaryPath, errorSummary);
+            }
+            catch (summaryError) {
+                core.warning(`Failed to write error summary: ${summaryError}`);
+            }
+        }
     }
 }
 // Run the action
@@ -35277,11 +35303,10 @@ function getInputs() {
     if (!validEventTypes.includes(eventType)) {
         throw new Error(`Invalid event_type: '${eventType}'. Must be one of: ${validEventTypes.join(', ')}`);
     }
-    // Validate status
-    const validStatuses = ['success', 'failure', 'in_progress'];
-    if (!validStatuses.includes(status)) {
-        throw new Error(`Invalid status: '${status}'. Must be one of: ${validStatuses.join(', ')}`);
-    }
+    // Note: Status validation is handled by the API, which accepts many values:
+    // pending, queued, scheduled, started, in_progress, init, deploying/building,
+    // success, completed, complete, finished, deployed/built,
+    // failed, fail, failure, error, aborted, abort, cancelled, cancel, skipped
     // Validate environment is provided for deployment events
     if (eventType === 'deployment' && !environment) {
         throw new Error(`environment is required when event_type is 'deployment'`);
