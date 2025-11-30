@@ -124,6 +124,13 @@ export async function sendDeploymentEvent(
     core.info(`✅ Deployment event created successfully`)
     core.debug(`Response: ${JSON.stringify(response.data, null, 2)}`)
 
+    // Validate critical fields
+    if (!response.data.id) {
+      core.warning('⚠️ API response is missing id field')
+      core.warning(`Response status: ${response.status}`)
+      core.warning(`Response headers: ${JSON.stringify(response.headers)}`)
+    }
+
     return response.data
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -223,13 +230,15 @@ export async function sendDeploymentEvent(
           core.info('Continuing workflow (fail_on_rejection is false)')
           // Return a placeholder response when not failing
           return {
-            deployment_id: '',
-            event_id: '',
+            id: '',
             product_id: '',
+            product_name: '',
             version_id: '',
+            version: '',
             environment_id: '',
+            environment_name: '',
             status: 'rejected',
-            created_at: new Date().toISOString(),
+            deployed_at: new Date().toISOString(),
           }
         }
       }

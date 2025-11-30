@@ -43,13 +43,23 @@ export interface BuildEventPayload {
 }
 
 export interface DeploymentEventResponse {
-  deployment_id: string
-  event_id: string
+  id: string // Deployment ID (UUID)
   product_id: string
+  product_name: string
   version_id: string
+  version: string
   environment_id: string
+  environment_name: string
   status: string
-  created_at: string
+  deployed_at: string
+  source_system?: string | null
+  deployed_by?: string | null
+  deployed_by_name?: string | null
+  deployed_by_email?: string | null
+  completed_at?: string | null
+  deploy_url?: string | null
+  extra_metadata?: Record<string, unknown> | null
+  soak_time_hours?: number | null
 }
 
 export interface BuildEventResponse {

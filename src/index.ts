@@ -80,20 +80,24 @@ function writeSummary(
   let summary = '## 🚀 Versioner Summary\n\n'
 
   if (eventType === 'build') {
-    const viewUrl = `${hostname}/manage/versions?view=${resourceId}`
     summary += `- **Action:** Build\n`
     summary += `- **Status:** ${statusEmoji} ${status}\n`
     summary += `- **Version:** \`${version}\`\n`
     summary += `- **Git SHA:** \`${scmSha}\`\n\n`
-    summary += `<a href="${viewUrl}" target="_blank">View in Versioner →</a>\n`
+    if (resourceId && resourceId !== 'undefined') {
+      const viewUrl = `${hostname}/manage/versions?view=${resourceId}`
+      summary += `<a href="${viewUrl}" target="_blank">View in Versioner →</a>\n`
+    }
   } else {
-    const viewUrl = `${hostname}/deployments/${resourceId}`
     summary += `- **Action:** Deployment\n`
     summary += `- **Environment:** ${environment}\n`
     summary += `- **Status:** ${statusEmoji} ${status}\n`
     summary += `- **Version:** \`${version}\`\n`
     summary += `- **Git SHA:** \`${scmSha}\`\n\n`
-    summary += `<a href="${viewUrl}" target="_blank">View in Versioner →</a>\n`
+    if (resourceId && resourceId !== 'undefined') {
+      const viewUrl = `${hostname}/deployments/${resourceId}`
+      summary += `<a href="${viewUrl}" target="_blank">View in Versioner →</a>\n`
+    }
   }
 
   try {
@@ -230,16 +234,23 @@ async function run(): Promise<void> {
         inputs.failOnRejection
       )
 
+      // Validate response has required fields
+      if (!response.id) {
+        core.warning('⚠️ API response missing id field - this may indicate an API issue')
+        core.debug(`Full response: ${JSON.stringify(response, null, 2)}`)
+      }
+
       // Set outputs
-      core.setOutput('deployment_id', response.deployment_id)
-      core.setOutput('event_id', response.event_id)
-      core.setOutput('product_id', response.product_id)
+      core.setOutput('deployment_id', response.id || '')
+      core.setOutput('version_id', response.version_id || '')
+      core.setOutput('product_id', response.product_id || '')
+      core.setOutput('environment_id', response.environment_id || '')
 
       // Success summary
       core.info('')
       core.info(`✅ Deployment tracked successfully!`)
-      core.info(`   Deployment ID: ${response.deployment_id}`)
-      core.info(`   Event ID: ${response.event_id}`)
+      core.info(`   Deployment ID: ${response.id || 'N/A'}`)
+      core.info(`   Version ID: ${response.version_id || 'N/A'}`)
 
       // Create GitHub annotation for visibility
       core.notice(
@@ -253,7 +264,7 @@ async function run(): Promise<void> {
         inputs.status,
         githubMetadata.scm_sha,
         inputs.apiUrl,
-        response.deployment_id,
+        response.id,
         inputs.environment
       )
 

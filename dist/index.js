@@ -34670,6 +34670,12 @@ async function sendDeploymentEvent(apiUrl, apiKey, payload, failOnRejection = fa
         });
         core.info(`✅ Deployment event created successfully`);
         core.debug(`Response: ${JSON.stringify(response.data, null, 2)}`);
+        // Validate critical fields
+        if (!response.data.id) {
+            core.warning('⚠️ API response is missing id field');
+            core.warning(`Response status: ${response.status}`);
+            core.warning(`Response headers: ${JSON.stringify(response.headers)}`);
+        }
         return response.data;
     }
     catch (error) {
@@ -34747,13 +34753,15 @@ async function sendDeploymentEvent(apiUrl, apiKey, payload, failOnRejection = fa
                     core.info('Continuing workflow (fail_on_rejection is false)');
                     // Return a placeholder response when not failing
                     return {
-                        deployment_id: '',
-                        event_id: '',
+                        id: '',
                         product_id: '',
+                        product_name: '',
                         version_id: '',
+                        version: '',
                         environment_id: '',
+                        environment_name: '',
                         status: 'rejected',
-                        created_at: new Date().toISOString(),
+                        deployed_at: new Date().toISOString(),
                     };
                 }
             }
@@ -35079,21 +35087,25 @@ function writeSummary(eventType, version, status, scmSha, apiUrl, resourceId, en
     const statusEmoji = getStatusEmoji(status);
     let summary = '## 🚀 Versioner Summary\n\n';
     if (eventType === 'build') {
-        const viewUrl = `${hostname}/manage/versions?view=${resourceId}`;
         summary += `- **Action:** Build\n`;
         summary += `- **Status:** ${statusEmoji} ${status}\n`;
         summary += `- **Version:** \`${version}\`\n`;
         summary += `- **Git SHA:** \`${scmSha}\`\n\n`;
-        summary += `<a href="${viewUrl}" target="_blank">View in Versioner →</a>\n`;
+        if (resourceId && resourceId !== 'undefined') {
+            const viewUrl = `${hostname}/manage/versions?view=${resourceId}`;
+            summary += `<a href="${viewUrl}" target="_blank">View in Versioner →</a>\n`;
+        }
     }
     else {
-        const viewUrl = `${hostname}/deployments/${resourceId}`;
         summary += `- **Action:** Deployment\n`;
         summary += `- **Environment:** ${environment}\n`;
         summary += `- **Status:** ${statusEmoji} ${status}\n`;
         summary += `- **Version:** \`${version}\`\n`;
         summary += `- **Git SHA:** \`${scmSha}\`\n\n`;
-        summary += `<a href="${viewUrl}" target="_blank">View in Versioner →</a>\n`;
+        if (resourceId && resourceId !== 'undefined') {
+            const viewUrl = `${hostname}/deployments/${resourceId}`;
+            summary += `<a href="${viewUrl}" target="_blank">View in Versioner →</a>\n`;
+        }
     }
     try {
         fs.appendFileSync(summaryPath, summary);
@@ -35196,19 +35208,25 @@ async function run() {
             };
             core.info('Sending deployment event to Versioner...');
             const response = await (0, api_client_1.sendDeploymentEvent)(inputs.apiUrl, inputs.apiKey, payload, inputs.failOnRejection);
+            // Validate response has required fields
+            if (!response.id) {
+                core.warning('⚠️ API response missing id field - this may indicate an API issue');
+                core.debug(`Full response: ${JSON.stringify(response, null, 2)}`);
+            }
             // Set outputs
-            core.setOutput('deployment_id', response.deployment_id);
-            core.setOutput('event_id', response.event_id);
-            core.setOutput('product_id', response.product_id);
+            core.setOutput('deployment_id', response.id || '');
+            core.setOutput('version_id', response.version_id || '');
+            core.setOutput('product_id', response.product_id || '');
+            core.setOutput('environment_id', response.environment_id || '');
             // Success summary
             core.info('');
             core.info(`✅ Deployment tracked successfully!`);
-            core.info(`   Deployment ID: ${response.deployment_id}`);
-            core.info(`   Event ID: ${response.event_id}`);
+            core.info(`   Deployment ID: ${response.id || 'N/A'}`);
+            core.info(`   Version ID: ${response.version_id || 'N/A'}`);
             // Create GitHub annotation for visibility
             core.notice(`Deployment tracked: ${productName}@${inputs.version} → ${inputs.environment} (${inputs.status})`);
             // Write to GitHub Step Summary
-            writeSummary('deployment', inputs.version, inputs.status, githubMetadata.scm_sha, inputs.apiUrl, response.deployment_id, inputs.environment);
+            writeSummary('deployment', inputs.version, inputs.status, githubMetadata.scm_sha, inputs.apiUrl, response.id, inputs.environment);
             // Fail the action if deployment status indicates failure
             const statusLower = inputs.status.toLowerCase();
             if (['failed', 'fail', 'failure', 'error'].includes(statusLower)) {
