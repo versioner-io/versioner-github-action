@@ -26,16 +26,34 @@ function getVersionerHostname(apiUrl: string): string {
  * Get status emoji based on status string
  */
 function getStatusEmoji(status: string): string {
-  switch (status) {
-    case 'success':
-      return '✅'
-    case 'failure':
-      return '❌'
-    case 'in_progress':
-      return '🔄'
-    default:
-      return '⚠️'
+  const statusLower = status.toLowerCase()
+
+  // Success statuses
+  if (['success', 'completed', 'complete', 'finished', 'deployed', 'built'].includes(statusLower)) {
+    return '✅'
   }
+
+  // Failure statuses
+  if (['failed', 'fail', 'failure', 'error'].includes(statusLower)) {
+    return '❌'
+  }
+
+  // In-progress statuses
+  if (['started', 'in_progress', 'init', 'deploying', 'building'].includes(statusLower)) {
+    return '🔄'
+  }
+
+  // Pending statuses
+  if (['pending', 'queued', 'scheduled'].includes(statusLower)) {
+    return '⏳'
+  }
+
+  // Aborted statuses
+  if (['aborted', 'abort', 'cancelled', 'cancel', 'skipped'].includes(statusLower)) {
+    return '🚫'
+  }
+
+  return '⚠️'
 }
 
 /**
@@ -177,6 +195,12 @@ async function run(): Promise<void> {
         inputs.apiUrl,
         response.version_id
       )
+
+      // Fail the action if build status indicates failure
+      const statusLower = inputs.status.toLowerCase()
+      if (['failed', 'fail', 'failure', 'error'].includes(statusLower)) {
+        core.setFailed(`Build failed: ${productName}@${inputs.version} (${inputs.status})`)
+      }
     } else {
       // Build deployment event payload
       const payload: DeploymentEventPayload = {
@@ -232,6 +256,14 @@ async function run(): Promise<void> {
         response.deployment_id,
         inputs.environment
       )
+
+      // Fail the action if deployment status indicates failure
+      const statusLower = inputs.status.toLowerCase()
+      if (['failed', 'fail', 'failure', 'error'].includes(statusLower)) {
+        core.setFailed(
+          `Deployment failed: ${productName}@${inputs.version} → ${inputs.environment} (${inputs.status})`
+        )
+      }
     }
   } catch (error) {
     // Handle errors and fail the action
