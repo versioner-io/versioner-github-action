@@ -34916,8 +34916,8 @@ const github = __importStar(__nccwpck_require__(3228));
 function getGitHubMetadata() {
     const { context } = github;
     const { repo, runId, runNumber, sha, actor, ref, payload } = context;
-    // Construct build URL
-    const buildUrl = `https://github.com/${repo.owner}/${repo.repo}/actions/runs/${runId}`;
+    // Construct workflow run URL
+    const workflowRunUrl = `https://github.com/${repo.owner}/${repo.repo}/actions/runs/${runId}`;
     // Extract branch name from ref (e.g., refs/heads/main -> main)
     const scmBranch = ref.startsWith('refs/heads/') ? ref.replace('refs/heads/', '') : ref;
     // Try to get email and name from commit author (available in push events)
@@ -34930,7 +34930,7 @@ function getGitHubMetadata() {
         source_system: 'github',
         build_number: String(runNumber),
         invoke_id: String(runId),
-        build_url: buildUrl,
+        workflow_run_url: workflowRunUrl,
         deployed_by: actor,
         deployed_by_email: email,
         deployed_by_name: name,
@@ -35127,7 +35127,7 @@ async function run() {
                 version: inputs.version,
                 status: inputs.status,
                 build_number: githubMetadata.build_number,
-                build_url: githubMetadata.build_url,
+                build_url: githubMetadata.workflow_run_url,
                 scm_repository: githubMetadata.scm_repository,
                 scm_sha: githubMetadata.scm_sha,
                 scm_branch: githubMetadata.scm_branch,
@@ -35169,7 +35169,7 @@ async function run() {
                 source_system: githubMetadata.source_system,
                 build_number: githubMetadata.build_number,
                 invoke_id: githubMetadata.invoke_id,
-                build_url: githubMetadata.build_url,
+                deploy_url: githubMetadata.workflow_run_url,
                 deployed_by: githubMetadata.deployed_by,
                 deployed_by_email: githubMetadata.deployed_by_email,
                 deployed_by_name: githubMetadata.deployed_by_name,
