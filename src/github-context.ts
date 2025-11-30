@@ -8,8 +8,8 @@ export function getGitHubMetadata(): GitHubMetadata {
   const { context } = github
   const { repo, runId, runNumber, sha, actor, ref, payload } = context
 
-  // Construct build URL
-  const buildUrl = `https://github.com/${repo.owner}/${repo.repo}/actions/runs/${runId}`
+  // Construct workflow run URL
+  const workflowRunUrl = `https://github.com/${repo.owner}/${repo.repo}/actions/runs/${runId}`
 
   // Extract branch name from ref (e.g., refs/heads/main -> main)
   const scmBranch = ref.startsWith('refs/heads/') ? ref.replace('refs/heads/', '') : ref
@@ -25,7 +25,7 @@ export function getGitHubMetadata(): GitHubMetadata {
     source_system: 'github',
     build_number: String(runNumber),
     invoke_id: String(runId),
-    build_url: buildUrl,
+    workflow_run_url: workflowRunUrl,
     deployed_by: actor,
     deployed_by_email: email,
     deployed_by_name: name,

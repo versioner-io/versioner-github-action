@@ -26,15 +26,17 @@ describe('getGitHubMetadata', () => {
       source_system: 'github',
       build_number: '42',
       invoke_id: '12345',
-      build_url: 'https://github.com/test-owner/test-repo/actions/runs/12345',
+      workflow_run_url: 'https://github.com/test-owner/test-repo/actions/runs/12345',
       deployed_by: 'test-user',
     })
   })
 
-  it('should construct correct build URL', () => {
+  it('should construct correct workflow run URL', () => {
     const metadata = getGitHubMetadata()
 
-    expect(metadata.build_url).toBe('https://github.com/test-owner/test-repo/actions/runs/12345')
+    expect(metadata.workflow_run_url).toBe(
+      'https://github.com/test-owner/test-repo/actions/runs/12345'
+    )
   })
 })
 

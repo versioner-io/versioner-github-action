@@ -12,7 +12,7 @@ export interface DeploymentEventPayload {
     source_system?: string;
     build_number?: string;
     invoke_id?: string;
-    build_url?: string;
+    deploy_url?: string;
     deployed_by?: string;
     deployed_by_email?: string;
     deployed_by_name?: string;
@@ -78,7 +78,7 @@ export interface GitHubMetadata {
     source_system: string;
     build_number: string;
     invoke_id: string;
-    build_url: string;
+    workflow_run_url: string;
     deployed_by: string;
     deployed_by_email?: string;
     deployed_by_name?: string;

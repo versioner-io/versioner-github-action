@@ -379,7 +379,8 @@ The action automatically includes the following metadata from the GitHub context
 - `source_system` - Always set to `"github"`
 - `build_number` - GitHub Actions run number
 - `invoke_id` - GitHub Actions run ID
-- `build_url` - Link to the GitHub Actions run
+- `deploy_url` - Link to the GitHub Actions workflow run (for deployment events)
+- `build_url` - Link to the GitHub Actions workflow run (for build events)
 - `deployed_by` / `built_by` - GitHub username who triggered the workflow
 - `deployed_by_email` / `built_by_email` - Email from commit author (when available)
 - `deployed_by_name` / `built_by_name` - Full name from commit author (when available)
