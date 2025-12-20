@@ -105,7 +105,7 @@ export async function sendDeploymentEvent(
   apiUrl: string,
   apiKey: string,
   payload: DeploymentEventPayload,
-  failOnRejection = false
+  failOnApiError = true
 ): Promise<DeploymentEventResponse> {
   const endpoint = `${apiUrl.replace(/\/$/, '')}/deployment-events/`
 
@@ -174,8 +174,6 @@ export async function sendDeploymentEvent(
           if (detail?.retry_after) {
             rejectionError += `\nRetry after: ${detail.retry_after}`
           }
-          rejectionError += `\n\nTo skip checks (emergency only), add to your workflow:\n`
-          rejectionError += `  skip-preflight-checks: true`
         } else if (status === 428) {
           // Precondition failures (FLOW_VIOLATION, INSUFFICIENT_SOAK_TIME, etc.)
           rejectionError = `❌ Deployment Precondition Failed\n\n`
@@ -192,8 +190,6 @@ export async function sendDeploymentEvent(
             rejectionError += `\n\nDeploy to required environments first, then retry.`
           } else if (errorCode === 'INSUFFICIENT_SOAK_TIME') {
             rejectionError += `\n\nWait for soak time to complete, then retry.`
-            rejectionError += `\n\nTo skip checks (emergency only), add to your workflow:\n`
-            rejectionError += `  skip-preflight-checks: true`
           } else if (
             errorCode === 'QUALITY_APPROVAL_REQUIRED' ||
             errorCode === 'APPROVAL_REQUIRED'
@@ -203,8 +199,6 @@ export async function sendDeploymentEvent(
           } else {
             // Generic handler for unknown/future error codes
             rejectionError += `\n\nResolve the issue described above, then retry.`
-            rejectionError += `\n\nTo skip checks (emergency only), add to your workflow:\n`
-            rejectionError += `  skip-preflight-checks: true`
           }
 
           // Always include full details for debugging (all error codes)
@@ -223,54 +217,49 @@ export async function sendDeploymentEvent(
           detail?.details
         )
 
-        if (failOnRejection) {
-          throw new Error(rejectionError)
-        } else {
-          core.warning(`⚠️ ${rejectionError}`)
-          core.info('Continuing workflow (fail_on_rejection is false)')
-          // Return a placeholder response when not failing
-          return {
-            id: '',
-            product_id: '',
-            product_name: '',
-            version_id: '',
-            version: '',
-            environment_id: '',
-            environment_name: '',
-            status: 'rejected',
-            deployed_at: new Date().toISOString(),
-          }
-        }
+        // Preflight rejections always throw - policy enforcement is server-side
+        throw new Error(rejectionError)
       }
 
-      // Provide detailed error messages
+      // Handle API errors (401, 403, 404, 422, timeouts, connection errors)
+      let apiErrorMessage = ''
+
       if (status === 401) {
-        throw new Error(
-          `Authentication failed: Invalid API key. Please check your VERSIONER_API_KEY secret.`
-        )
+        apiErrorMessage = `Authentication failed: Invalid API key. Please check your VERSIONER_API_KEY secret.`
       } else if (status === 403) {
-        throw new Error(
-          `Authorization failed: API key does not have permission to create deployment events.`
-        )
+        apiErrorMessage = `Authorization failed: API key does not have permission to create deployment events.`
       } else if (status === 422) {
         const detail = data && typeof data === 'object' ? JSON.stringify(data) : String(data)
-        throw new Error(`Validation error: ${detail}`)
+        apiErrorMessage = `Validation error: ${detail}`
       } else if (status === 404) {
-        throw new Error(`API endpoint not found. Please check your api_url: ${apiUrl}`)
+        apiErrorMessage = `API endpoint not found. Please check your api_url: ${apiUrl}`
       } else if (axiosError.code === 'ECONNREFUSED') {
-        throw new Error(
-          `Connection refused: Unable to connect to ${apiUrl}. Please check the API URL.`
-        )
+        apiErrorMessage = `Connection refused: Unable to connect to ${apiUrl}. Please check the API URL.`
       } else if (axiosError.code === 'ETIMEDOUT') {
-        throw new Error(
-          `Request timeout: The API did not respond within 30 seconds. Please try again.`
-        )
+        apiErrorMessage = `Request timeout: The API did not respond within 30 seconds. Please try again.`
       } else {
         const message = axiosError.message || 'Unknown error'
         const responseData = data ? `\nResponse: ${JSON.stringify(data)}` : ''
-        throw new Error(
-          `Failed to send deployment event (HTTP ${status || 'unknown'}): ${message}${responseData}`
-        )
+        apiErrorMessage = `Failed to send deployment event (HTTP ${status || 'unknown'}): ${message}${responseData}`
+      }
+
+      if (failOnApiError) {
+        throw new Error(apiErrorMessage)
+      } else {
+        core.warning(`⚠️ ${apiErrorMessage}`)
+        core.info('Continuing workflow (fail_on_api_error is false)')
+        // Return a placeholder response when not failing
+        return {
+          id: '',
+          product_id: '',
+          product_name: '',
+          version_id: '',
+          version: '',
+          environment_id: '',
+          environment_name: '',
+          status: 'not_recorded',
+          deployed_at: new Date().toISOString(),
+        }
       }
     }
 
@@ -286,7 +275,7 @@ export async function sendBuildEvent(
   apiUrl: string,
   apiKey: string,
   payload: BuildEventPayload,
-  failOnRejection = false
+  failOnApiError = true
 ): Promise<BuildEventResponse> {
   const endpoint = `${apiUrl.replace(/\/$/, '')}/build-events/`
 
@@ -318,51 +307,46 @@ export async function sendBuildEvent(
         const message = errorData?.message || errorData?.error || 'Build rejected by Versioner'
         const rejectionError = `Build rejected: ${message}`
 
-        if (failOnRejection) {
-          throw new Error(rejectionError)
-        } else {
-          core.warning(`⚠️ ${rejectionError}`)
-          core.info('Continuing workflow (fail_on_rejection is false)')
-          // Return a placeholder response when not failing
-          return {
-            id: '',
-            version_id: '',
-            product_id: '',
-            version: payload.version,
-            status: 'rejected',
-            started_at: new Date().toISOString(),
-          }
-        }
+        // Preflight rejections always throw - policy enforcement is server-side
+        throw new Error(rejectionError)
       }
 
-      // Provide detailed error messages
+      // Handle API errors (401, 403, 404, 422, timeouts, connection errors)
+      let apiErrorMessage = ''
+
       if (status === 401) {
-        throw new Error(
-          `Authentication failed: Invalid API key. Please check your VERSIONER_API_KEY secret.`
-        )
+        apiErrorMessage = `Authentication failed: Invalid API key. Please check your VERSIONER_API_KEY secret.`
       } else if (status === 403) {
-        throw new Error(
-          `Authorization failed: API key does not have permission to create build events.`
-        )
+        apiErrorMessage = `Authorization failed: API key does not have permission to create build events.`
       } else if (status === 422) {
         const detail = data && typeof data === 'object' ? JSON.stringify(data) : String(data)
-        throw new Error(`Validation error: ${detail}`)
+        apiErrorMessage = `Validation error: ${detail}`
       } else if (status === 404) {
-        throw new Error(`API endpoint not found. Please check your api_url: ${apiUrl}`)
+        apiErrorMessage = `API endpoint not found. Please check your api_url: ${apiUrl}`
       } else if (axiosError.code === 'ECONNREFUSED') {
-        throw new Error(
-          `Connection refused: Unable to connect to ${apiUrl}. Please check the API URL.`
-        )
+        apiErrorMessage = `Connection refused: Unable to connect to ${apiUrl}. Please check the API URL.`
       } else if (axiosError.code === 'ETIMEDOUT') {
-        throw new Error(
-          `Request timeout: The API did not respond within 30 seconds. Please try again.`
-        )
+        apiErrorMessage = `Request timeout: The API did not respond within 30 seconds. Please try again.`
       } else {
         const message = axiosError.message || 'Unknown error'
         const responseData = data ? `\nResponse: ${JSON.stringify(data)}` : ''
-        throw new Error(
-          `Failed to send build event (HTTP ${status || 'unknown'}): ${message}${responseData}`
-        )
+        apiErrorMessage = `Failed to send build event (HTTP ${status || 'unknown'}): ${message}${responseData}`
+      }
+
+      if (failOnApiError) {
+        throw new Error(apiErrorMessage)
+      } else {
+        core.warning(`⚠️ ${apiErrorMessage}`)
+        core.info('Continuing workflow (fail_on_api_error is false)')
+        // Return a placeholder response when not failing
+        return {
+          id: '',
+          version_id: '',
+          product_id: '',
+          version: payload.version,
+          status: 'not_recorded',
+          started_at: new Date().toISOString(),
+        }
       }
     }
 

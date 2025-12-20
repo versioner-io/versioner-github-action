@@ -2,8 +2,8 @@ import { DeploymentEventPayload, DeploymentEventResponse, BuildEventPayload, Bui
 /**
  * Send deployment event to Versioner API
  */
-export declare function sendDeploymentEvent(apiUrl: string, apiKey: string, payload: DeploymentEventPayload, failOnRejection?: boolean): Promise<DeploymentEventResponse>;
+export declare function sendDeploymentEvent(apiUrl: string, apiKey: string, payload: DeploymentEventPayload, failOnApiError?: boolean): Promise<DeploymentEventResponse>;
 /**
  * Send build event to Versioner API
  */
-export declare function sendBuildEvent(apiUrl: string, apiKey: string, payload: BuildEventPayload, failOnRejection?: boolean): Promise<BuildEventResponse>;
+export declare function sendBuildEvent(apiUrl: string, apiKey: string, payload: BuildEventPayload, failOnApiError?: boolean): Promise<BuildEventResponse>;

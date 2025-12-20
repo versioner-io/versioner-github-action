@@ -38,14 +38,10 @@ inputs:
     description: 'Additional JSON metadata to attach to the event'
     required: false
     default: '{}'
-  fail_on_rejection:
-    description: 'Fail the workflow if Versioner rejects the deployment (e.g., conflicts, no-deploy windows)'
+  fail_on_api_error:
+    description: 'Fail the workflow if Versioner API has connectivity or authentication errors (does not affect preflight check rejections, which always fail)'
     required: false
     default: 'true'
-  skip_preflight_checks:
-    description: 'Skip preflight checks (use for emergency deployments only)'
-    required: false
-    default: 'false'
 
 outputs:
   deployment_id:

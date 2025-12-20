@@ -172,7 +172,7 @@ async function run(): Promise<void> {
         inputs.apiUrl,
         inputs.apiKey,
         payload,
-        inputs.failOnRejection
+        inputs.failOnApiError
       )
 
       // Set outputs
@@ -212,7 +212,6 @@ async function run(): Promise<void> {
         version: inputs.version,
         environment_name: inputs.environment,
         status: inputs.status,
-        skip_preflight_checks: inputs.skipPreflightChecks,
         scm_repository: githubMetadata.scm_repository,
         scm_sha: githubMetadata.scm_sha,
         source_system: githubMetadata.source_system,
@@ -231,7 +230,7 @@ async function run(): Promise<void> {
         inputs.apiUrl,
         inputs.apiKey,
         payload,
-        inputs.failOnRejection
+        inputs.failOnApiError
       )
 
       // Validate response has required fields

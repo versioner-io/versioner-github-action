@@ -6,7 +6,6 @@ export interface DeploymentEventPayload {
     version: string;
     environment_name?: string;
     status: string;
-    skip_preflight_checks?: boolean;
     scm_repository?: string;
     scm_sha?: string;
     source_system?: string;
@@ -78,8 +77,7 @@ export interface ActionInputs {
     eventType: string;
     status: string;
     metadata: Record<string, unknown>;
-    failOnRejection: boolean;
-    skipPreflightChecks: boolean;
+    failOnApiError: boolean;
 }
 export interface GitHubMetadata {
     scm_repository: string;

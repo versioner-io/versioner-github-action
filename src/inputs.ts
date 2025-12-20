@@ -17,9 +17,7 @@ export function getInputs(): ActionInputs {
   const eventType = core.getInput('event_type', { required: false }) || 'deployment'
   const status = core.getInput('status', { required: false }) || 'success'
   const metadataInput = core.getInput('metadata', { required: false }) || '{}'
-  const failOnRejectionInput = core.getInput('fail_on_rejection', { required: false }) || 'true'
-  const skipPreflightChecksInput =
-    core.getInput('skip_preflight_checks', { required: false }) || 'false'
+  const failOnApiErrorInput = core.getInput('fail_on_api_error', { required: false }) || 'true'
 
   // Validate API key is provided
   if (!apiKey) {
@@ -64,11 +62,8 @@ export function getInputs(): ActionInputs {
     )
   }
 
-  // Parse fail_on_rejection boolean
-  const failOnRejection = failOnRejectionInput.toLowerCase() === 'true'
-
-  // Parse skip_preflight_checks boolean
-  const skipPreflightChecks = skipPreflightChecksInput.toLowerCase() === 'true'
+  // Parse fail_on_api_error boolean
+  const failOnApiError = failOnApiErrorInput.toLowerCase() === 'true'
 
   return {
     apiUrl,
@@ -79,7 +74,6 @@ export function getInputs(): ActionInputs {
     eventType,
     status,
     metadata,
-    failOnRejection,
-    skipPreflightChecks,
+    failOnApiError,
   }
 }
