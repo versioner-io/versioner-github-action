@@ -34656,7 +34656,7 @@ function writeErrorSummary(errorCode, message, ruleName, status, retryAfter, det
 /**
  * Send deployment event to Versioner API
  */
-async function sendDeploymentEvent(apiUrl, apiKey, payload, failOnRejection = false) {
+async function sendDeploymentEvent(apiUrl, apiKey, payload, failOnApiError = true) {
     const endpoint = `${apiUrl.replace(/\/$/, '')}/deployment-events/`;
     core.info(`Sending deployment event to ${endpoint}`);
     core.debug(`Payload: ${JSON.stringify(payload, null, 2)}`);
@@ -34706,8 +34706,6 @@ async function sendDeploymentEvent(apiUrl, apiKey, payload, failOnRejection = fa
                     if (detail?.retry_after) {
                         rejectionError += `\nRetry after: ${detail.retry_after}`;
                     }
-                    rejectionError += `\n\nTo skip checks (emergency only), add to your workflow:\n`;
-                    rejectionError += `  skip-preflight-checks: true`;
                 }
                 else if (status === 428) {
                     // Precondition failures (FLOW_VIOLATION, INSUFFICIENT_SOAK_TIME, etc.)
@@ -34724,8 +34722,6 @@ async function sendDeploymentEvent(apiUrl, apiKey, payload, failOnRejection = fa
                     }
                     else if (errorCode === 'INSUFFICIENT_SOAK_TIME') {
                         rejectionError += `\n\nWait for soak time to complete, then retry.`;
-                        rejectionError += `\n\nTo skip checks (emergency only), add to your workflow:\n`;
-                        rejectionError += `  skip-preflight-checks: true`;
                     }
                     else if (errorCode === 'QUALITY_APPROVAL_REQUIRED' ||
                         errorCode === 'APPROVAL_REQUIRED') {
@@ -34735,8 +34731,6 @@ async function sendDeploymentEvent(apiUrl, apiKey, payload, failOnRejection = fa
                     else {
                         // Generic handler for unknown/future error codes
                         rejectionError += `\n\nResolve the issue described above, then retry.`;
-                        rejectionError += `\n\nTo skip checks (emergency only), add to your workflow:\n`;
-                        rejectionError += `  skip-preflight-checks: true`;
                     }
                     // Always include full details for debugging (all error codes)
                     if (detail?.details) {
@@ -34745,50 +34739,53 @@ async function sendDeploymentEvent(apiUrl, apiKey, payload, failOnRejection = fa
                 }
                 // Write error summary to GitHub Step Summary
                 writeErrorSummary(errorCode, message, ruleName, status, detail?.retry_after, detail?.details);
-                if (failOnRejection) {
-                    throw new Error(rejectionError);
-                }
-                else {
-                    core.warning(`⚠️ ${rejectionError}`);
-                    core.info('Continuing workflow (fail_on_rejection is false)');
-                    // Return a placeholder response when not failing
-                    return {
-                        id: '',
-                        product_id: '',
-                        product_name: '',
-                        version_id: '',
-                        version: '',
-                        environment_id: '',
-                        environment_name: '',
-                        status: 'rejected',
-                        deployed_at: new Date().toISOString(),
-                    };
-                }
+                // Preflight rejections always throw - policy enforcement is server-side
+                throw new Error(rejectionError);
             }
-            // Provide detailed error messages
+            // Handle API errors (401, 403, 404, 422, timeouts, connection errors)
+            let apiErrorMessage = '';
             if (status === 401) {
-                throw new Error(`Authentication failed: Invalid API key. Please check your VERSIONER_API_KEY secret.`);
+                apiErrorMessage = `Authentication failed: Invalid API key. Please check your VERSIONER_API_KEY secret.`;
             }
             else if (status === 403) {
-                throw new Error(`Authorization failed: API key does not have permission to create deployment events.`);
+                apiErrorMessage = `Authorization failed: API key does not have permission to create deployment events.`;
             }
             else if (status === 422) {
                 const detail = data && typeof data === 'object' ? JSON.stringify(data) : String(data);
-                throw new Error(`Validation error: ${detail}`);
+                apiErrorMessage = `Validation error: ${detail}`;
             }
             else if (status === 404) {
-                throw new Error(`API endpoint not found. Please check your api_url: ${apiUrl}`);
+                apiErrorMessage = `API endpoint not found. Please check your api_url: ${apiUrl}`;
             }
             else if (axiosError.code === 'ECONNREFUSED') {
-                throw new Error(`Connection refused: Unable to connect to ${apiUrl}. Please check the API URL.`);
+                apiErrorMessage = `Connection refused: Unable to connect to ${apiUrl}. Please check the API URL.`;
             }
             else if (axiosError.code === 'ETIMEDOUT') {
-                throw new Error(`Request timeout: The API did not respond within 30 seconds. Please try again.`);
+                apiErrorMessage = `Request timeout: The API did not respond within 30 seconds. Please try again.`;
             }
             else {
                 const message = axiosError.message || 'Unknown error';
                 const responseData = data ? `\nResponse: ${JSON.stringify(data)}` : '';
-                throw new Error(`Failed to send deployment event (HTTP ${status || 'unknown'}): ${message}${responseData}`);
+                apiErrorMessage = `Failed to send deployment event (HTTP ${status || 'unknown'}): ${message}${responseData}`;
+            }
+            if (failOnApiError) {
+                throw new Error(apiErrorMessage);
+            }
+            else {
+                core.warning(`⚠️ ${apiErrorMessage}`);
+                core.info('Continuing workflow (fail_on_api_error is false)');
+                // Return a placeholder response when not failing
+                return {
+                    id: '',
+                    product_id: '',
+                    product_name: '',
+                    version_id: '',
+                    version: '',
+                    environment_id: '',
+                    environment_name: '',
+                    status: 'not_recorded',
+                    deployed_at: new Date().toISOString(),
+                };
             }
         }
         // Non-axios errors
@@ -34798,7 +34795,7 @@ async function sendDeploymentEvent(apiUrl, apiKey, payload, failOnRejection = fa
 /**
  * Send build event to Versioner API
  */
-async function sendBuildEvent(apiUrl, apiKey, payload, failOnRejection = false) {
+async function sendBuildEvent(apiUrl, apiKey, payload, failOnApiError = true) {
     const endpoint = `${apiUrl.replace(/\/$/, '')}/build-events/`;
     core.info(`Sending build event to ${endpoint}`);
     core.debug(`Payload: ${JSON.stringify(payload, null, 2)}`);
@@ -34824,47 +34821,50 @@ async function sendBuildEvent(apiUrl, apiKey, payload, failOnRejection = false) 
                 const errorData = data;
                 const message = errorData?.message || errorData?.error || 'Build rejected by Versioner';
                 const rejectionError = `Build rejected: ${message}`;
-                if (failOnRejection) {
-                    throw new Error(rejectionError);
-                }
-                else {
-                    core.warning(`⚠️ ${rejectionError}`);
-                    core.info('Continuing workflow (fail_on_rejection is false)');
-                    // Return a placeholder response when not failing
-                    return {
-                        id: '',
-                        version_id: '',
-                        product_id: '',
-                        version: payload.version,
-                        status: 'rejected',
-                        started_at: new Date().toISOString(),
-                    };
-                }
+                // Preflight rejections always throw - policy enforcement is server-side
+                throw new Error(rejectionError);
             }
-            // Provide detailed error messages
+            // Handle API errors (401, 403, 404, 422, timeouts, connection errors)
+            let apiErrorMessage = '';
             if (status === 401) {
-                throw new Error(`Authentication failed: Invalid API key. Please check your VERSIONER_API_KEY secret.`);
+                apiErrorMessage = `Authentication failed: Invalid API key. Please check your VERSIONER_API_KEY secret.`;
             }
             else if (status === 403) {
-                throw new Error(`Authorization failed: API key does not have permission to create build events.`);
+                apiErrorMessage = `Authorization failed: API key does not have permission to create build events.`;
             }
             else if (status === 422) {
                 const detail = data && typeof data === 'object' ? JSON.stringify(data) : String(data);
-                throw new Error(`Validation error: ${detail}`);
+                apiErrorMessage = `Validation error: ${detail}`;
             }
             else if (status === 404) {
-                throw new Error(`API endpoint not found. Please check your api_url: ${apiUrl}`);
+                apiErrorMessage = `API endpoint not found. Please check your api_url: ${apiUrl}`;
             }
             else if (axiosError.code === 'ECONNREFUSED') {
-                throw new Error(`Connection refused: Unable to connect to ${apiUrl}. Please check the API URL.`);
+                apiErrorMessage = `Connection refused: Unable to connect to ${apiUrl}. Please check the API URL.`;
             }
             else if (axiosError.code === 'ETIMEDOUT') {
-                throw new Error(`Request timeout: The API did not respond within 30 seconds. Please try again.`);
+                apiErrorMessage = `Request timeout: The API did not respond within 30 seconds. Please try again.`;
             }
             else {
                 const message = axiosError.message || 'Unknown error';
                 const responseData = data ? `\nResponse: ${JSON.stringify(data)}` : '';
-                throw new Error(`Failed to send build event (HTTP ${status || 'unknown'}): ${message}${responseData}`);
+                apiErrorMessage = `Failed to send build event (HTTP ${status || 'unknown'}): ${message}${responseData}`;
+            }
+            if (failOnApiError) {
+                throw new Error(apiErrorMessage);
+            }
+            else {
+                core.warning(`⚠️ ${apiErrorMessage}`);
+                core.info('Continuing workflow (fail_on_api_error is false)');
+                // Return a placeholder response when not failing
+                return {
+                    id: '',
+                    version_id: '',
+                    product_id: '',
+                    version: payload.version,
+                    status: 'not_recorded',
+                    started_at: new Date().toISOString(),
+                };
             }
         }
         // Non-axios errors
@@ -35165,7 +35165,7 @@ async function run() {
                 extra_metadata: mergedMetadata,
             };
             core.info('Sending build event to Versioner...');
-            const response = await (0, api_client_1.sendBuildEvent)(inputs.apiUrl, inputs.apiKey, payload, inputs.failOnRejection);
+            const response = await (0, api_client_1.sendBuildEvent)(inputs.apiUrl, inputs.apiKey, payload, inputs.failOnApiError);
             // Set outputs
             core.setOutput('build_id', response.id);
             core.setOutput('version_id', response.version_id);
@@ -35193,7 +35193,6 @@ async function run() {
                 version: inputs.version,
                 environment_name: inputs.environment,
                 status: inputs.status,
-                skip_preflight_checks: inputs.skipPreflightChecks,
                 scm_repository: githubMetadata.scm_repository,
                 scm_sha: githubMetadata.scm_sha,
                 source_system: githubMetadata.source_system,
@@ -35207,7 +35206,7 @@ async function run() {
                 extra_metadata: mergedMetadata,
             };
             core.info('Sending deployment event to Versioner...');
-            const response = await (0, api_client_1.sendDeploymentEvent)(inputs.apiUrl, inputs.apiKey, payload, inputs.failOnRejection);
+            const response = await (0, api_client_1.sendDeploymentEvent)(inputs.apiUrl, inputs.apiKey, payload, inputs.failOnApiError);
             // Validate response has required fields
             if (!response.id) {
                 core.warning('⚠️ API response missing id field - this may indicate an API issue');
@@ -35328,8 +35327,7 @@ function getInputs() {
     const eventType = core.getInput('event_type', { required: false }) || 'deployment';
     const status = core.getInput('status', { required: false }) || 'success';
     const metadataInput = core.getInput('metadata', { required: false }) || '{}';
-    const failOnRejectionInput = core.getInput('fail_on_rejection', { required: false }) || 'true';
-    const skipPreflightChecksInput = core.getInput('skip_preflight_checks', { required: false }) || 'false';
+    const failOnApiErrorInput = core.getInput('fail_on_api_error', { required: false }) || 'true';
     // Validate API key is provided
     if (!apiKey) {
         throw new Error(`api_key is required (provide via input or VERSIONER_API_KEY environment variable)`);
@@ -35362,10 +35360,8 @@ function getInputs() {
     catch (error) {
         throw new Error(`Invalid metadata JSON: ${error instanceof Error ? error.message : String(error)}`);
     }
-    // Parse fail_on_rejection boolean
-    const failOnRejection = failOnRejectionInput.toLowerCase() === 'true';
-    // Parse skip_preflight_checks boolean
-    const skipPreflightChecks = skipPreflightChecksInput.toLowerCase() === 'true';
+    // Parse fail_on_api_error boolean
+    const failOnApiError = failOnApiErrorInput.toLowerCase() === 'true';
     return {
         apiUrl,
         apiKey,
@@ -35375,8 +35371,7 @@ function getInputs() {
         eventType,
         status,
         metadata,
-        failOnRejection,
-        skipPreflightChecks,
+        failOnApiError,
     };
 }
 

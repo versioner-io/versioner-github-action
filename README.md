@@ -85,8 +85,7 @@ Check the **Actions** tab to see your deployment tracked!
 | `event_type` | ❌ | `deployment` | Event type: `build` or `deployment` |
 | `status` | ❌ | `success` | Event status (`success`, `failure`, `in_progress`) |
 | `metadata` | ❌ | `{}` | Additional JSON metadata to attach to the event |
-| `fail_on_rejection` | ❌ | `true` | Fail the workflow if Versioner rejects the deployment (e.g., conflicts, no-deploy windows) |
-| `skip_preflight_checks` | ❌ | `false` | Skip preflight checks (use for emergency deployments only) |
+| `fail_on_api_error` | ❌ | `true` | Fail the workflow if Versioner API has connectivity or authentication errors. Preflight check rejections (409, 423, 428) always fail regardless of this setting. |
 
 \* Required unless provided via `VERSIONER_API_KEY` environment variable
 
@@ -127,21 +126,20 @@ Preflight checks run automatically by default:
 
 ### Skip Checks (Emergency Only)
 
-For emergency hotfixes, you can skip preflight checks:
+For emergency hotfixes, admins can temporarily disable or set rules to "Report Only" mode in the Versioner UI. This provides centralized control without requiring code changes:
 
-```yaml
-- name: Emergency hotfix deployment
-  uses: versioner-io/versioner-github-action@v1
-  with:
-    api_key: ${{ secrets.VERSIONER_API_KEY }}
-    product_name: my-service
-    version: ${{ github.sha }}
-    environment: production
-    status: started
-    skip_preflight_checks: true  # ⚠️ Use sparingly!
-```
+1. Log into Versioner UI
+2. Navigate to Deployment Rules
+3. Change rule status from "Enabled" to "Report Only" or "Disabled"
+4. Deploy normally - rules won't block
+5. After emergency, flip rules back to "Enabled"
 
-**⚠️ Warning:** Skipping checks bypasses all deployment policies. Use only for genuine emergencies.
+**Benefits of server-side control:**
+- No code changes required
+- Instant effect across all deployments
+- Granular control (disable specific rules, not all)
+- Auditable (status changes tracked)
+- Easy to reverse
 
 ### Error Messages
 
@@ -155,9 +153,6 @@ Rule: Production Freeze - Friday Afternoons
 Deployment blocked by no-deploy window
 
 Retry after: 2025-11-21T18:00:00-08:00
-
-To skip checks (emergency only), add to your workflow:
-  skip-preflight-checks: true
 ```
 
 **Flow Violation (428):**
@@ -182,9 +177,6 @@ Version must soak in staging for at least 24 hours
 Retry after: 2025-11-22T10:00:00Z
 
 Wait for soak time to complete, then retry.
-
-To skip checks (emergency only), add to your workflow:
-  skip-preflight-checks: true
 ```
 
 ## 🔧 Usage Examples
@@ -312,9 +304,9 @@ jobs:
     status: ${{ steps.deploy.outcome }}
 ```
 
-### Enforce Deployment Policies
+### Best-Effort Observability
 
-Fail the workflow if Versioner rejects the deployment (e.g., no-deploy windows, concurrent deployments):
+Allow deployments to proceed even if Versioner API is unavailable:
 
 ```yaml
 - name: Deploy to production
@@ -323,8 +315,10 @@ Fail the workflow if Versioner rejects the deployment (e.g., no-deploy windows, 
     api_key: ${{ secrets.VERSIONER_API_KEY }}
     version: ${{ github.sha }}
     environment: production
-    fail_on_rejection: true  # Fail if Versioner blocks deployment
+    fail_on_api_error: false  # Don't block deployment if Versioner is down
 ```
+
+**Note:** Preflight check rejections (409, 423, 428) always fail the workflow. Policy enforcement is controlled server-side via rule status (enabled, report_only, disabled) in the Versioner UI.
 
 ### Multi-Environment Deployment
 
