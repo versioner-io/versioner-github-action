@@ -33,3 +33,6 @@ Thumbs.db
 *.tmp
 .notes
 .windsurfrules
+
+# Claude Code
+.claude/
