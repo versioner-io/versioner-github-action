@@ -9,9 +9,9 @@ Versioner GitHub Action - a TypeScript GitHub Action that sends build and deploy
 ## Cross-Repo Context
 
 This repo is part of the Versioner ecosystem. Before starting work:
-- Use the `/kanban-markdown` skill or read `versioner-dev-docs/.devtool/features/` for current status and priorities
-- Read relevant feature docs from `/Users/phil.austin/projects/versioner-workspace/versioner-dev-docs/specs/`
-- Update feature file status in `versioner-dev-docs/.devtool/features/` as you complete tasks, add entries to `changelog.md`
+- Use the `/kanban-markdown` skill or read `../.devtool/features/` for current status and priorities
+- Read relevant feature docs from `../docs/specs/`
+- Update feature file status in `../.devtool/features/` as you complete tasks, add entries to `../changelog.md`
 
 ## Build & Test Commands
 
