@@ -35092,7 +35092,7 @@ function writeSummary(eventType, version, status, scmSha, apiUrl, resourceId, en
         summary += `- **Version:** \`${version}\`\n`;
         summary += `- **Git SHA:** \`${scmSha}\`\n\n`;
         if (resourceId && resourceId !== 'undefined') {
-            const viewUrl = `${hostname}/manage/versions?view=${resourceId}`;
+            const viewUrl = `${hostname}/manage/catalog?tab=versions&view=${resourceId}`;
             summary += `<a href="${viewUrl}" target="_blank">View in Versioner →</a>\n`;
         }
     }

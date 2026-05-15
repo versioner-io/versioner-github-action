@@ -6,12 +6,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Versioner GitHub Action - a TypeScript GitHub Action that sends build and deployment events to the Versioner API. Node.js 20, @actions/core, Axios.
 
-## Cross-Repo Context
-
-This repo is part of the Versioner ecosystem. Before starting work:
-- Use the `/kanban-markdown` skill or read `../.devtool/features/` for current status and priorities
-- Read relevant feature docs from `../docs/specs/`
-- Update feature file status in `../.devtool/features/` as you complete tasks, add entries to `../changelog.md`
 
 ## Build & Test Commands
 
