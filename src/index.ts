@@ -1,5 +1,6 @@
 import * as core from '@actions/core'
 import * as fs from 'fs'
+import { version as actionVersion } from '../package.json'
 import { getInputs } from './inputs'
 import { getGitHubMetadata, getAutoDetectedMetadata, mergeMetadata } from './github-context'
 import { sendDeploymentEvent, sendBuildEvent } from './api-client'
@@ -66,7 +67,8 @@ function writeSummary(
   scmSha: string,
   apiUrl: string,
   resourceId: string,
-  environment?: string
+  environment?: string,
+  warnings: string[] = []
 ): void {
   const summaryPath = process.env.GITHUB_STEP_SUMMARY
   if (!summaryPath) {
@@ -99,6 +101,15 @@ function writeSummary(
       summary += `<a href="${viewUrl}" target="_blank">View in Versioner →</a>\n`
     }
   }
+
+  if (warnings.length > 0) {
+    summary += `\n⚠️ **Report-only warnings:**\n`
+    for (const warning of warnings) {
+      summary += `- ${warning}\n`
+    }
+  }
+
+  summary += `\n---\n_versioner-github-action v${actionVersion}_\n`
 
   try {
     fs.appendFileSync(summaryPath, summary)
@@ -150,6 +161,30 @@ function emitReportOnlyWarnings(extraMetadata: Record<string, unknown> | null | 
     const errorMessage = typeof rule.error_message === 'string' ? rule.error_message : String(rule.error_message ?? 'no details')
     core.warning(`Report-only rule violation: ${ruleName} — ${errorMessage}`)
   }
+}
+
+/**
+ * Extract report-only rule failures from API response extra_metadata and return
+ * them as formatted strings suitable for use in the job summary.
+ */
+function extractReportOnlyWarnings(extraMetadata: Record<string, unknown> | null | undefined): string[] {
+  const preflightStatus = extraMetadata?.preflight_status
+  if (preflightStatus === null || preflightStatus === undefined) {
+    return []
+  }
+
+  const rulesEvaluated = (preflightStatus as Record<string, unknown>)?.rules_evaluated
+  if (!Array.isArray(rulesEvaluated) || rulesEvaluated.length === 0) {
+    return []
+  }
+
+  return (rulesEvaluated as ReportOnlyRule[])
+    .filter((rule) => rule.status === 'report_only' && rule.evaluation_result === 'failed')
+    .map((rule) => {
+      const ruleName = typeof rule.rule_name === 'string' ? rule.rule_name : String(rule.rule_name ?? 'unknown')
+      const errorMessage = typeof rule.error_message === 'string' ? rule.error_message : String(rule.error_message ?? 'no details')
+      return `${ruleName}: ${errorMessage}`
+    })
 }
 
 /**
@@ -239,7 +274,9 @@ async function run(): Promise<void> {
         inputs.status,
         githubMetadata.scm_sha,
         inputs.apiUrl,
-        response.version_id
+        response.version_id,
+        undefined,
+        extractReportOnlyWarnings(null)
       )
 
       // Fail the action if build status indicates failure
@@ -309,7 +346,8 @@ async function run(): Promise<void> {
         githubMetadata.scm_sha,
         inputs.apiUrl,
         response.id,
-        inputs.environment
+        inputs.environment,
+        extractReportOnlyWarnings(response.extra_metadata)
       )
 
       // Fail the action if deployment status indicates failure
