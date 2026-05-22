@@ -110,6 +110,48 @@ function writeSummary(
   }
 }
 
+interface ReportOnlyRule {
+  rule_name?: unknown
+  error_message?: unknown
+  status?: unknown
+  evaluation_result?: unknown
+}
+
+/**
+ * Emit core.warning annotations for any report-only rule failures present in
+ * the API response extra_metadata.preflight_status.rules_evaluated list.
+ *
+ * Report-only rules never block a deployment but their violations should be
+ * visible as GitHub Actions annotations so teams can act on them.
+ */
+function emitReportOnlyWarnings(extraMetadata: Record<string, unknown> | null | undefined): void {
+  const preflightStatus = extraMetadata?.preflight_status
+  if (preflightStatus === null || preflightStatus === undefined) {
+    return
+  }
+
+  const rulesEvaluated = (preflightStatus as Record<string, unknown>)?.rules_evaluated
+  if (!Array.isArray(rulesEvaluated) || rulesEvaluated.length === 0) {
+    return
+  }
+
+  const violations = (rulesEvaluated as ReportOnlyRule[]).filter(
+    (rule) => rule.status === 'report_only' && rule.evaluation_result === 'failed'
+  )
+
+  if (violations.length === 0) {
+    return
+  }
+
+  core.info(`⚠ ${violations.length} report-only warning(s)`)
+
+  for (const rule of violations) {
+    const ruleName = typeof rule.rule_name === 'string' ? rule.rule_name : String(rule.rule_name ?? 'unknown')
+    const errorMessage = typeof rule.error_message === 'string' ? rule.error_message : String(rule.error_message ?? 'no details')
+    core.warning(`Report-only rule violation: ${ruleName} — ${errorMessage}`)
+  }
+}
+
 /**
  * Main action entrypoint
  */
@@ -238,6 +280,9 @@ async function run(): Promise<void> {
         core.warning('⚠️ API response missing id field - this may indicate an API issue')
         core.debug(`Full response: ${JSON.stringify(response, null, 2)}`)
       }
+
+      // Surface report-only rule warnings from preflight evaluation
+      emitReportOnlyWarnings(response.extra_metadata)
 
       // Set outputs
       core.setOutput('deployment_id', response.id || '')
